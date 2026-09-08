@@ -105,13 +105,13 @@ export function ProductCard({ product, priority, className }: ProductCardProps) 
               <span className="text-lg font-bold tabular-nums leading-none">{formatCLP(product.price)}</span>
               {discount > 0 ? <s className="text-xs font-medium text-ink-400">{formatCLP(product.compareAtPrice!)}</s> : null}
             </div>
-            <div className="mt-1.5 flex items-center gap-1.5" aria-label={soldOut ? "Sin stock" : `${product.stock} disponibles`}>
-              <span className="flex gap-0.5">
+            <div className="mt-1.5 flex min-w-0 items-center gap-1.5" aria-label={soldOut ? "Sin stock" : `${product.stock} disponibles`}>
+              <span className="flex shrink-0 gap-0.5">
                 {[1, 2, 3].map((n) => (
                   <span key={n} className={cn("h-1.5 w-3 rounded-full", n <= stockLevel ? (stockLevel === 1 ? "bg-flame" : "bg-lime") : "bg-ink-100")} />
                 ))}
               </span>
-              <span className={cn("text-[11px] font-semibold", soldOut ? "text-ink-400" : stockLevel === 1 ? "text-flame" : "text-ink-500")}>
+              <span className={cn("min-w-0 truncate text-[11px] font-semibold", soldOut ? "text-ink-400" : stockLevel === 1 ? "text-flame" : "text-ink-500")}>
                 {soldOut ? "Agotado" : inCart > 0 ? `${inCart} en carrito` : product.stock <= 5 ? `Quedan ${product.stock}` : "En stock"}
               </span>
             </div>

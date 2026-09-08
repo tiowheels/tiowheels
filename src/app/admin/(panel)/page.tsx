@@ -6,6 +6,7 @@ import { formatCLP, formatDateTime, cn } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
 import { startOfDaySantiago, addDays, startOfMonthSantiago, weekdayShort, dayMonth, ymdSantiago } from "@/app/admin/_lib/dates";
 import { OrderStatusBadge, ChannelBadge } from "@/components/admin/StatusBadge";
+import { InstallPwaButton } from "@/components/admin/InstallPwaButton";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PendingOrderActions } from "@/components/admin/PendingOrderActions";
 
@@ -94,6 +95,8 @@ export default async function AdminHome() {
         </div>
         <ArrowRight className="size-5 text-lime" />
       </Link>
+
+      <InstallPwaButton asCard className="mt-3" />
 
       {/* Mensajes sin leer */}
       {unreadMessages > 0 && (

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "Tío Wheels · Autos de colección",
     short_name: "Tío Wheels",
     description: "Tienda de autos a escala Hot Wheels en Chile. Catálogo, compras y panel de ventas.",

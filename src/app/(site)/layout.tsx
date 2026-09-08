@@ -13,7 +13,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     .map((c) => ({ slug: c.slug, name: c.name, count: c.count, children: c.children.map((k) => ({ slug: k.slug, name: k.name, count: k.count })) }));
   return (
     <CartProvider>
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex min-h-dvh flex-col overflow-x-clip">
         <Header categories={categories} user={user ? { name: user.name, role: user.role } : null} />
         <main className="flex-1">{children}</main>
         <Footer categories={categories} />

@@ -129,7 +129,7 @@ export function AddToCart({ product, relatedAnchor }: { product: AddToCartProduc
               <Price amount={product.price} compareAt={product.compareAtPrice} size="md" />
             )}
           </div>
-          <div className="ml-auto w-44 shrink-0">{button("md")}</div>
+          <div className="ml-auto w-auto min-w-36 max-w-[60%] shrink-0">{button("md")}</div>
         </div>
       </div>
     </>
