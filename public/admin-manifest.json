@@ -1,0 +1,22 @@
+{
+  "name": "Tío Wheels · Panel de ventas",
+  "short_name": "TW Ventas",
+  "description": "Venta rápida, pedidos y productos de Tío Wheels.",
+  "start_url": "/admin/venta-rapida",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "es-CL",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Venta rápida", "url": "/admin/venta-rapida" },
+    { "name": "Pedidos", "url": "/admin/pedidos" },
+    { "name": "Productos", "url": "/admin/productos" }
+  ]
+}

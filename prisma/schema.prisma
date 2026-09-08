@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING // creado, esperando pago
+  PAID // pagado (Flow) o registrado
+  PROCESSING // preparando
+  SHIPPED // enviado
+  COMPLETED // entregado / cerrado
+  CANCELLED
+  REFUNDED
+}
+
+enum OrderChannel {
+  WEB // checkout online
+  MANUAL // venta rápida desde el admin
+  LEGACY_WEB // migrado desde WooCommerce (checkout)
+  LEGACY_APP // migrado desde WooCommerce (app móvil)
+}
+
+enum PaymentMethod {
+  FLOW
+  TRANSFER
+  CASH
+  CARD_POS // tarjeta presencial
+  WEBPAY_LEGACY
+  OTHER
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum ShippingMethod {
+  DELIVERY_COD // envío por pagar (el cliente paga el courier al recibir)
+  PICKUP // retiro
+  NONE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  lastName     String?
+  phone        String?
+  rut          String?
+  passwordHash String?
+  sessionVersion Int    @default(0) // se incrementa al cambiar/restablecer contraseña: invalida sesiones previas
+  role         Role     @default(CUSTOMER)
+  legacyId     Int?     @unique
+  address1     String?
+  address2     String?
+  commune      String?
+  city         String?
+  region       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders      Order[]
+  resetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique // hash SHA-256 del token enviado por correo
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+  imageUrl    String?
+  parentId    String?
+  sortOrder   Int     @default(0)
+  featured    Boolean @default(false)
+  legacyId    Int?    @unique
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@index([parentId])
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  legacyId Int?      @unique
+  products Product[]
+}
+
+model Product {
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  name             String
+  description      String?
+  shortDescription String?
+  price            Int // CLP, sin decimales
+  compareAtPrice   Int?
+  stock            Int           @default(0)
+  status           ProductStatus @default(ACTIVE)
+  featured         Boolean       @default(false)
+  brand            String? // marca del auto (Ford, Nissan...) derivada de categorías
+  searchText       String        @default("") // texto normalizado (sin tildes, minúsculas) para búsqueda trigram
+  legacyId         Int?          @unique
+  totalSales       Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  images     ProductImage[]
+  categories Category[]
+  tags       Tag[]
+  orderItems OrderItem[]
+
+  @@index([status, stock])
+  @@index([brand])
+  @@index([createdAt])
+  @@index([price])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  path      String // ruta relativa dentro de storage/media, ej: products/abc/1.webp
+  sourceUrl String? // URL original (sitio antiguo) para regenerar en producción
+  alt       String?
+  position  Int     @default(0)
+  width     Int?
+  height    Int?
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+}
+
+model Order {
+  id            String         @id @default(cuid())
+  number        Int            @unique @default(autoincrement())
+  legacyId      Int?           @unique
+  userId        String?
+  status        OrderStatus    @default(PENDING)
+  channel       OrderChannel   @default(WEB)
+  paymentMethod PaymentMethod  @default(FLOW)
+  paymentStatus PaymentStatus  @default(UNPAID)
+  subtotal      Int
+  shippingCost  Int            @default(0)
+  discount      Int            @default(0)
+  total         Int
+  // datos del cliente (snapshot)
+  firstName     String
+  lastName      String?
+  email         String?
+  phone         String?
+  rut           String?
+  // envío
+  shippingMethod ShippingMethod @default(DELIVERY_COD)
+  address1      String?
+  address2      String?
+  commune       String?
+  city          String?
+  region        String?
+  customerNote  String?
+  adminNote     String?
+  trackingCode  String? // número de seguimiento del courier (Starken, Chilexpress…)
+  carrier       String? // nombre del courier
+  shippedAt     DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user     User?       @relation(fields: [userId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String?
+  name      String
+  price     Int
+  quantity  Int
+  total     Int
+  imagePath String?
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String
+  provider  PaymentMethod
+  token     String?       @unique // token de Flow
+  flowOrder Int?
+  amount    Int
+  status    String        @default("pending") // pending | paid | rejected | cancelled
+  raw       Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

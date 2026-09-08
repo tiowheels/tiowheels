@@ -1,0 +1,33 @@
+import type { Metadata } from "next";
+import { db } from "@/lib/db";
+import { PageHeader } from "@/components/admin/PageHeader";
+import { CategoryManager, type CategoryItem } from "@/components/admin/CategoryManager";
+
+export const metadata: Metadata = { title: "Categorías" };
+export const dynamic = "force-dynamic";
+
+export default async function CategoriesPage() {
+  const cats = await db.category.findMany({
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, slug: true, parentId: true, sortOrder: true, featured: true, _count: { select: { products: true } } },
+  });
+  const inStockRows = await db.$queryRaw<{ id: string; n: bigint }[]>`
+    SELECT cp."A" AS id, count(*)::bigint AS n
+    FROM "_CategoryToProduct" cp JOIN "Product" p ON p."id" = cp."B"
+    WHERE p."status" = 'ACTIVE' AND p."stock" > 0 GROUP BY cp."A"`;
+  const inStock = new Map(inStockRows.map((r) => [r.id, Number(r.n)]));
+
+  const byId = new Map<string, CategoryItem>(cats.map((c) => [c.id, { id: c.id, name: c.name, slug: c.slug, parentId: c.parentId, sortOrder: c.sortOrder, featured: c.featured, total: c._count.products, inStock: inStock.get(c.id) ?? 0, children: [] }]));
+  const roots: CategoryItem[] = [];
+  for (const c of byId.values()) {
+    if (c.parentId && byId.has(c.parentId)) byId.get(c.parentId)!.children.push(c);
+    else roots.push(c);
+  }
+
+  return (
+    <>
+      <PageHeader title="Categorías" description={`${cats.length} categorías · dos niveles (principal y subcategoría). El orden define cómo se muestran en la tienda.`} />
+      <CategoryManager roots={roots} />
+    </>
+  );
+}

@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+storage
+data/legacy/*.json
+data/legacy/pages
+.env
+.env.*
+!.env.example
+*.log
+.claude

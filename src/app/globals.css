@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  /* Marca Tío Wheels */
+  --color-ink: #0a0a0a;
+  --color-ink-700: #262626;
+  --color-ink-500: #525252;
+  --color-ink-400: #737373;
+  --color-ink-300: #a3a3a3;
+  --color-ink-200: #d4d4d4;
+  --color-ink-100: #ececec;
+  --color-ink-50: #f5f5f5;
+  --color-paper: #ffffff;
+
+  --color-lime: #b0d800;
+  --color-lime-600: #93b500;
+  --color-lime-700: #7a9600;
+  --color-lime-100: #f0f8c2;
+  --color-lime-50: #f8fce0;
+
+  --color-flame: #ec9f47;
+  --color-danger: #e93232;
+  --color-success: #16a34a;
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.18);
+  --shadow-pop: 0 12px 40px -12px rgb(0 0 0 / 0.35);
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-blob: blob 14s ease-in-out infinite;
+  --animate-pop: pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes blob {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(40px, -30px) scale(1.12);
+    }
+    66% {
+      transform: translate(-30px, 20px) scale(0.94);
+    }
+  }
+  @keyframes pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.35);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-paper text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-bold tracking-tight;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    @apply bg-lime text-ink;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
+  [hidden] {
+    display: none !important;
+  }
+}
+
+@utility container-x {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-200 select-none disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 active:scale-[0.98];
+}
+@utility btn-primary {
+  @apply btn bg-ink text-white hover:bg-ink-700;
+}
+@utility btn-lime {
+  @apply btn bg-lime text-ink hover:bg-lime-600;
+}
+@utility btn-outline {
+  @apply btn border border-ink-200 bg-white text-ink hover:border-ink hover:bg-ink-50;
+}
+@utility btn-ghost {
+  @apply btn text-ink hover:bg-ink-50;
+}
+@utility btn-md {
+  @apply h-11 px-5 text-sm;
+}
+@utility btn-sm {
+  @apply h-9 px-4 text-[13px];
+}
+@utility btn-lg {
+  @apply h-13 px-7 text-base;
+}
+@utility input {
+  @apply h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-[15px] text-ink placeholder:text-ink-400 transition focus:border-ink focus:outline-none focus:ring-2 focus:ring-lime/60 disabled:bg-ink-50;
+}
+@utility label {
+  @apply mb-1.5 block text-[13px] font-semibold text-ink-700;
+}
+@utility card {
+  @apply rounded-card bg-white shadow-card;
+}
+@utility chip {
+  @apply inline-flex h-8 items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 text-[13px] font-medium text-ink-700 transition hover:border-ink;
+}
+@utility chip-active {
+  @apply border-ink bg-ink text-white hover:bg-ink-700;
+}
+@utility eyebrow {
+  @apply text-[11px] font-bold uppercase tracking-[0.18em] text-lime-700;
+}
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
