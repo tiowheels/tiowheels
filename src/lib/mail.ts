@@ -1,4 +1,4 @@
-import "server-only";
+
 import nodemailer from "nodemailer";
 
 export function mailConfigured() {
