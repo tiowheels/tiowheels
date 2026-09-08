@@ -3,7 +3,7 @@
 Un proyecto Railway con 2 servicios: **Postgres** y **web** (este repo, Dockerfile). Las imágenes viven en **Cloudflare R2** (no hace falta volumen).
 
 ## 0. Cloudflare R2 (una vez)
-1. En Cloudflare → R2 → Create bucket: `tiowheels-media` (ubicación automática).
+1. En Cloudflare → R2 → Create bucket: `tiowheels` (ubicación automática).
 2. Bucket → Settings → Public access: habilitar el subdominio `r2.dev` o conectar un dominio propio (recomendado `media.tiowheels.cl`, se crea solo el CNAME si el DNS está en Cloudflare).
 3. R2 → Manage R2 API Tokens → Create API token: permisos "Object Read & Write" solo para ese bucket. Guardar Access Key ID y Secret Access Key. El Account ID aparece en la barra lateral de R2.
 4. Poner las 4 variables `R2_*` y `NEXT_PUBLIC_MEDIA_BASE_URL` en `.env` local y subir las fotos ya optimizadas (3,6 GB, reanudable):
@@ -25,7 +25,7 @@ railway add --service web
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (referencia al servicio Postgres) |
 | `AUTH_SECRET` | cadena aleatoria larga (`openssl rand -base64 48`) |
 | `NEXT_PUBLIC_SITE_URL` | `https://tiowheels.cl` (o el dominio de Railway mientras tanto) |
-| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` | credenciales de Cloudflare R2 (bucket `tiowheels-media`) |
+| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` | credenciales de Cloudflare R2 (bucket `tiowheels`) |
 | `NEXT_PUBLIC_MEDIA_BASE_URL` | dominio público del bucket, ej. `https://media.tiowheels.cl` (se fija en build) |
 | `FLOW_API_KEY` / `FLOW_SECRET_KEY` | claves de Flow (sandbox primero) |
 | `FLOW_API_URL` | `https://sandbox.flow.cl/api` → en producción `https://www.flow.cl/api` |
