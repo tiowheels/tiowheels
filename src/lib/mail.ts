@@ -1,5 +1,6 @@
 
 import nodemailer from "nodemailer";
+import { SITE } from "./site";
 
 export function mailConfigured() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -22,7 +23,9 @@ export async function sendMail(opts: { to: string; subject: string; html: string
   }
   try {
     await transport().sendMail({
-      from: process.env.SMTP_FROM || "Tío Wheels <contacto@tiowheels.cl>",
+      from: process.env.SMTP_FROM || `${SITE.name} <info@tiowheels.cl>`,
+      // Las respuestas de los clientes llegan a la casilla de atención, no a la de envío
+      replyTo: process.env.SMTP_REPLY_TO || SITE.email,
       ...opts,
     });
     return { skipped: false as const };
