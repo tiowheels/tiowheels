@@ -23,6 +23,12 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Variables públicas: Next las incrusta en el JS del navegador al compilar. Railway las pasa como build args si se declaran aquí.
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_MEDIA_BASE_URL
+ARG NEXT_PUBLIC_META_PIXEL_ID
+ARG NEXT_PUBLIC_GA_ID
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_PUBLIC_MEDIA_BASE_URL=$NEXT_PUBLIC_MEDIA_BASE_URL NEXT_PUBLIC_META_PIXEL_ID=$NEXT_PUBLIC_META_PIXEL_ID NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID
 # DATABASE_URL solo se necesita en runtime; generate no conecta a la BD
 RUN pnpm prisma generate && pnpm build
 
