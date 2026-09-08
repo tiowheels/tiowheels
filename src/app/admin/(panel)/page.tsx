@@ -150,9 +150,9 @@ export default async function AdminHome() {
         </div>
       </section>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
         {/* Pendientes */}
-        <section className="card p-4 md:p-6">
+        <section className="card min-w-0 p-4 md:p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base">
               <Clock className="size-4 text-flame" /> Por atender
@@ -166,9 +166,9 @@ export default async function AdminHome() {
           ) : (
             <ul className="divide-y divide-ink-100">
               {pending.map((o) => (
-                <li key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
-                  <Link href={`/admin/pedidos/${o.id}`} className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                <li key={o.id} className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 py-3">
+                  <Link href={`/admin/pedidos/${o.id}`} className="min-w-0 flex-1 basis-40">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-bold tabular-nums">#{o.number}</span>
                       <OrderStatusBadge status={o.status} />
                       <ChannelBadge channel={o.channel} />
@@ -185,7 +185,7 @@ export default async function AdminHome() {
         </section>
 
         {/* Stock 1 */}
-        <section className="card p-4 md:p-6">
+        <section className="card min-w-0 p-4 md:p-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base">
               <AlertTriangle className="size-4 text-flame" /> Última unidad

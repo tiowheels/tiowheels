@@ -90,7 +90,7 @@ export function AdminShell({ children, userName, logout, unreadMessages = 0 }: {
         </a>
       </header>
 
-      <main className="min-h-dvh px-4 pb-28 pt-4 sm:px-6 md:px-8 md:pb-10 md:pt-8 print:p-0">{children}</main>
+      <main className="min-h-dvh min-w-0 max-w-full overflow-x-hidden px-4 pb-28 pt-4 sm:px-6 md:px-8 md:pb-10 md:pt-8 print:p-0">{children}</main>
 
       {/* Barra inferior móvil */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 backdrop-blur safe-bottom md:hidden print:hidden">
