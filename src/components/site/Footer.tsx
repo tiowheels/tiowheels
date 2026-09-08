@@ -8,7 +8,7 @@ export function Footer({ categories }: { categories: { slug: string; name: strin
     <footer className="mt-20 bg-ink text-white">
       <div className="container-x grid gap-10 py-14 md:grid-cols-12">
         <div className="md:col-span-4">
-          <img src="/brand/logo.png" alt="Tío Wheels Toys" className="h-14 w-auto rounded-lg bg-white p-1.5" />
+          <img src="/brand/logo.png" alt="Tío Wheels Toys" className="h-20 w-auto" />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-ink-300">{SITE.mission.split(".")[0]}.</p>
           <div className="mt-5 flex gap-2">
             <a href={SITE.instagram} target="_blank" rel="noreferrer" aria-label="Instagram" className="flex size-10 items-center justify-center rounded-full bg-white/10 transition hover:bg-lime hover:text-ink">

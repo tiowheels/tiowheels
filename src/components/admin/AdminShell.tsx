@@ -37,7 +37,7 @@ export function AdminShell({ children, userName, logout, unreadMessages = 0 }: {
       {/* Sidebar escritorio */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-ink text-white md:flex print:hidden">
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-          <img src="/brand/logo.png" alt="Tío Wheels" className="h-9 w-auto rounded-lg bg-white p-1" />
+          <img src="/brand/logo.png" alt="Tío Wheels" className="h-11 w-auto" />
           <span className="rounded-md bg-lime px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-ink">Admin</span>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
