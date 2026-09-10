@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X, Send, Loader2, ArrowRight } from "lucide-react";
+import { X, Send, Loader2, ArrowRight, MessageCircle } from "lucide-react";
 import { cn, formatCLP } from "@/lib/format";
 import type { ChatProduct, ChatReply } from "@/lib/chat";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
@@ -13,7 +13,7 @@ type Mensaje = { de: "tio" | "cliente"; texto: string; productos?: ChatProduct[]
 
 const BIENVENIDA: Mensaje = {
   de: "tio",
-  texto: "¡Hola! Soy el Tío 👋 Dime qué auto buscas (una marca, un modelo o una colección) y te muestro lo que tengo con stock.",
+  texto: "¡Hola! Soy el Tío Wheels 👋 Dime qué auto buscas (una marca, un modelo o una colección) y te muestro lo que tengo con stock.",
   sugerencias: ["Mercedes", "Nissan Skyline", "Ver Hot Wheels premium", "¿Cómo son los envíos?"],
 };
 
@@ -41,20 +41,27 @@ export function ChatBot() {
   const [mensajes, setMensajes] = useState<Mensaje[]>([BIENVENIDA]);
   const [texto, setTexto] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [noVisto, setNoVisto] = useState(false);
+  const [aviso, setAviso] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Aviso sutil la primera vez, para que se note que hay ayuda disponible
+  // El rótulo aparece apenas carga la página, salvo que el visitante lo haya cerrado antes
   useEffect(() => {
-    let visto = false;
+    let oculto = false;
     try {
-      visto = localStorage.getItem("tw_chat_visto") === "1";
+      oculto = localStorage.getItem("tw_chat_aviso") === "0";
     } catch {}
-    if (visto) return;
-    const t = setTimeout(() => setNoVisto(true), 8000);
+    if (oculto) return;
+    const t = setTimeout(() => setAviso(true), 600);
     return () => clearTimeout(t);
   }, []);
+
+  function ocultarAviso() {
+    setAviso(false);
+    try {
+      localStorage.setItem("tw_chat_aviso", "0");
+    } catch {}
+  }
 
   useEffect(() => {
     if (abierto) finRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -62,10 +69,6 @@ export function ChatBot() {
 
   function abrir() {
     setAbierto(true);
-    setNoVisto(false);
-    try {
-      localStorage.setItem("tw_chat_visto", "1");
-    } catch {}
     setTimeout(() => inputRef.current?.focus(), 250);
   }
 
@@ -87,18 +90,23 @@ export function ChatBot() {
 
   return (
     <>
-      {/* Botón flotante */}
+      {/* Botón flotante: se acompaña de un rótulo para que se note que es un chat y no WhatsApp */}
       <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2 max-sm:bottom-4 max-sm:right-4">
-        {!abierto && noVisto && (
-          <motion.button
-            type="button"
-            onClick={abrir}
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-[15rem] rounded-2xl rounded-br-sm bg-white px-3 py-2 text-left text-[13px] font-medium text-ink shadow-pop"
+        {!abierto && aviso && (
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="relative max-w-[15rem] rounded-2xl rounded-br-sm bg-white py-2 pl-3 pr-7 shadow-pop"
           >
-            ¿Buscas algún auto? Pregúntame 🏁
-          </motion.button>
+            <button type="button" onClick={abrir} className="flex items-center gap-1.5 text-left text-[13px] font-bold text-ink">
+              <MessageCircle className="size-4 shrink-0 text-lime-700" />
+              Chatea con el Tío Wheels
+            </button>
+            <button type="button" onClick={ocultarAviso} aria-label="Ocultar el mensaje" className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full text-ink-400 hover:bg-ink-50 hover:text-ink">
+              <X className="size-3" />
+            </button>
+          </motion.div>
         )}
         <div className="flex items-center gap-2">
           <a
@@ -121,7 +129,7 @@ export function ChatBot() {
             ) : (
               <>
                 <img src="/brand/tio.png" alt="" className="size-14 object-contain drop-shadow" />
-                {noVisto && <span className="absolute right-0 top-0 size-3.5 rounded-full bg-danger ring-2 ring-white" />}
+                <span className="absolute -bottom-1.5 rounded-full bg-ink px-1.5 py-px text-[9px] font-black uppercase tracking-wide text-lime shadow">Chat</span>
               </>
             )}
           </button>
@@ -145,7 +153,7 @@ export function ChatBot() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-tight">Tío Wheels</p>
                 <p className="flex items-center gap-1.5 text-[11px] text-ink-300">
-                  <span className="size-1.5 rounded-full bg-lime" /> El Tío que siempre sabe lo que hace
+                  <span className="size-1.5 rounded-full bg-lime" /> El Tío Wheels que siempre sabe lo que hace
                 </p>
               </div>
               <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="flex size-9 items-center justify-center rounded-full hover:bg-white/10">

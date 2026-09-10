@@ -25,7 +25,7 @@ export type StoreSettings = {
 
 const STORE_DEFAULTS: StoreSettings = {
   pickupAddress: "Metro El Llano o dirección comercial.",
-  shippingNote: "Envío por pagar: el costo lo pagas al courier al recibir tu pedido. Despachamos en 1 a 3 días hábiles.",
+  shippingNote: "Envío por pagar: el costo lo pagas al courier al recibir tu pedido. Despachamos en 24 a 48 horas y la entrega demora de 1 a 3 días.",
   transferEnabled: true,
   transferDetails: "",
 };

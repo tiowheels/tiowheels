@@ -229,15 +229,22 @@ export default async function HomePage() {
         <div className="card p-8 md:p-10">
           <CarIcon className="mb-4 size-10 text-lime-700" />
           <span className="eyebrow">Nosotros</span>
-          <h2 className="mt-2 text-2xl">El Tío que siempre sabe lo que hace</h2>
+          <h2 className="mt-2 text-2xl">El Tío Wheels que siempre sabe lo que hace</h2>
           <p className="mt-3 text-ink-500">{SITE.mission}</p>
           <Link href="/nosotros" className="btn-outline btn-md mt-6">Conócenos</Link>
         </div>
-        <a href={SITE.instagram} target="_blank" rel="noreferrer" className="group relative overflow-hidden rounded-card bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] p-8 text-white md:p-10">
-          <InstagramIcon className="size-10" />
-          <h2 className="mt-4 text-2xl">Síguenos en Instagram</h2>
-          <p className="mt-2 max-w-sm text-white/85">Novedades cada semana, lanzamientos en vivo y sorteos para la comunidad. @tiowheels</p>
-          <span className="btn mt-6 h-11 bg-white px-5 text-sm text-ink group-hover:bg-ink group-hover:text-white">Ir a Instagram <ArrowRight className="size-4" /></span>
+        <a href={SITE.instagram} target="_blank" rel="noreferrer" className="group relative overflow-hidden rounded-card bg-ink p-8 text-white md:p-10">
+          {/* Foto de un auto difuminada + destellos lima: los colores de la marca */}
+          {heroProducts[0]?.image && <img src={mediaUrl(heroProducts[0].image, "medium")} alt="" aria-hidden className="pointer-events-none absolute -bottom-6 -right-8 w-[70%] rotate-6 object-contain opacity-60 blur-lg transition duration-700 group-hover:scale-110 group-hover:opacity-80" />}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" />
+          <div className="pointer-events-none absolute -bottom-10 -left-24 size-[360px] rounded-full bg-lime/30 blur-[120px]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+          <div className="relative">
+            <InstagramIcon className="size-10 text-lime" />
+            <h2 className="mt-4 text-2xl">Síguenos en Instagram</h2>
+            <p className="mt-2 max-w-sm text-ink-300">Novedades cada semana, lanzamientos en vivo y sorteos para la comunidad. @tiowheels</p>
+            <span className="btn mt-6 h-11 bg-lime px-5 text-sm text-ink transition group-hover:bg-white">Ir a Instagram <ArrowRight className="size-4" /></span>
+          </div>
         </a>
       </section>
     </>

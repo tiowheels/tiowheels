@@ -25,7 +25,7 @@ export default function ContactPage() {
         <div className="container-x relative py-12 md:py-16">
           <span className="eyebrow !text-lime">Contacto</span>
           <h1 className="mt-3 max-w-2xl text-3xl sm:text-4xl lg:text-5xl">¿Buscas un modelo o tienes una duda? Hablemos.</h1>
-          <p className="mt-4 max-w-xl text-ink-300">Te acompañamos antes y después de tu compra. Escríbenos por el canal que prefieras: el Tío siempre responde.</p>
+          <p className="mt-4 max-w-xl text-ink-300">Te acompañamos antes y después de tu compra. Escríbenos por el canal que prefieras: el Tío Wheels siempre responde.</p>
           <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
             <Clock className="size-4 text-lime" aria-hidden /> Ventas 24/7 · Atención por WhatsApp
           </div>

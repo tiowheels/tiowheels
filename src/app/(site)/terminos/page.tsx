@@ -67,7 +67,7 @@ export default function TermsPage() {
       <LegalSection n={5} title="Envíos">
         <ul>
           <li>
-            <b>Tiempos:</b> los pedidos se procesan en 1 a 3 días hábiles y el envío tarda entre 2 y 7 días hábiles, según tu ubicación.
+            <b>Tiempos:</b> despachamos los pedidos dentro de 24 a 48 horas y la entrega demora de 1 a 3 días, según la región y la empresa de transporte. El retiro se puede coordinar desde 30 minutos después de la compra.
           </li>
           <li>
             <b>Costos:</b> el envío es por pagar. El costo depende del destino y del peso del paquete, y se cancela directamente al courier (Blue Express o Starken) al recibir tu pedido. También puedes retirar sin costo en Metro El Llano o en nuestra dirección comercial.

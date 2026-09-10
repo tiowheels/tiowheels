@@ -228,7 +228,7 @@ export function CheckoutForm({ flowEnabled, transferEnabled, shippingNote, picku
                   onChange={() => setShippingMethod("DELIVERY_COD")}
                   icon={<Truck className="size-5" />}
                   title="Envío por pagar a todo Chile"
-                  description="Pagas el courier al recibir; despachamos en 1 a 3 días hábiles."
+                  description="Pagas el courier al recibir; despachamos en 24 a 48 horas y llega de 1 a 3 días."
                 />
                 <RadioCard
                   name="shippingMethod"

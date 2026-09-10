@@ -6,7 +6,7 @@ import { mediaUrl } from "./media-url";
 import { SITE } from "./site";
 
 /**
- * Asistente de la tienda ("el Tío"). No usa servicios externos: entiende la intención del
+ * Asistente de la tienda ("el Tío Wheels"). No usa servicios externos: entiende la intención del
  * mensaje y responde con datos reales del catálogo, así siempre muestra precios y stock al día.
  */
 
@@ -48,13 +48,13 @@ export async function responder(mensaje: string): Promise<ChatReply> {
   // Preguntas frecuentes
   if (contiene(bruto, ["envio", "envios", "despacho", "despachan", "llega", "starken", "blue", "courier", "cuanto demora", "demora"])) {
     return {
-      text: "Despachamos a todo Chile por Blue Express o Starken. El envío es **por pagar**: el costo lo cancelas al courier cuando recibes. Preparamos el pedido en 1 a 3 días hábiles y la entrega demora entre 2 y 7 días hábiles según la comuna.",
+      text: "Despachamos a todo Chile por Blue Express o Starken. El envío es **por pagar**: el costo lo cancelas al courier cuando recibes. Despachamos tu pedido dentro de **24 a 48 horas** y la entrega demora **de 1 a 3 días**, según la región y la empresa de transporte.",
       suggestions: ["¿Puedo retirar?", "Medios de pago", "Ver novedades"],
     };
   }
   if (contiene(bruto, ["retiro", "retirar", "buscar el pedido", "pasar a buscar", "presencial"])) {
     return {
-      text: "Sí, el retiro es gratis en **Metro El Llano** o en nuestra dirección comercial. Eliges retiro al finalizar la compra y coordinamos día y hora por WhatsApp.",
+      text: "Sí, el retiro es gratis en **Metro El Llano** o en nuestra dirección comercial. Puedes retirar **desde 30 minutos después de la compra**, previa coordinación. Eliges retiro al finalizar la compra y coordinamos día y hora por WhatsApp.",
       suggestions: ["¿Cómo son los envíos?", "Medios de pago"],
     };
   }
@@ -165,7 +165,7 @@ export async function responder(mensaje: string): Promise<ChatReply> {
 
 function saludo(): ChatReply {
   return {
-    text: "¡Hola! Soy el Tío 👋 Dime qué auto buscas (una marca, un modelo o una colección) y te muestro lo que tengo con stock.",
+    text: "¡Hola! Soy el Tío Wheels 👋 Dime qué auto buscas (una marca, un modelo o una colección) y te muestro lo que tengo con stock.",
     suggestions: ["Mercedes", "Nissan Skyline", "Ver Hot Wheels premium", "¿Cómo son los envíos?"],
   };
 }

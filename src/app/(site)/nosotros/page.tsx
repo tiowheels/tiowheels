@@ -45,7 +45,7 @@ export default async function AboutPage() {
           <div className="animate-fade-up">
             <span className="eyebrow !text-lime">Nosotros</span>
             <h1 className="mt-4 text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
-              El Tío que <span className="text-lime">siempre sabe</span> lo que hace
+              El Tío Wheels que <span className="text-lime">siempre sabe</span> lo que hace
             </h1>
             <p className="mt-5 max-w-md text-ink-300 sm:text-lg">
               Somos una tienda chilena de autos a escala hecha por coleccionistas, para coleccionistas. Hot Wheels, Matchbox, premium, Treasure Hunt y piezas que cuentan historias.
@@ -105,7 +105,7 @@ export default async function AboutPage() {
 
       {/* BENEFICIOS */}
       <section className="container-x mt-14 md:mt-20">
-        <span className="eyebrow">Por qué comprar con el Tío</span>
+        <span className="eyebrow">Por qué comprar con el Tío Wheels</span>
         <h2 className="mt-1 text-2xl sm:text-3xl">Lo que puedes esperar de nosotros</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {SITE.benefits.map((b, i) => {
@@ -125,16 +125,21 @@ export default async function AboutPage() {
 
       {/* COMUNIDAD */}
       <section className="container-x mt-14 md:mt-20">
-        <a href={SITE.instagram} target="_blank" rel="noreferrer" className="group relative flex flex-col gap-6 overflow-hidden rounded-card bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] p-8 text-white md:flex-row md:items-center md:justify-between md:p-12">
-          <div className="max-w-xl">
+        <a href={SITE.instagram} target="_blank" rel="noreferrer" className="group relative flex flex-col gap-6 overflow-hidden rounded-card bg-ink p-8 text-white md:flex-row md:items-center md:justify-between md:p-12">
+          {/* Foto de un auto difuminada + destellos lima: los colores de la marca */}
+          {collage[0]?.images[0] && <img src={mediaUrl(collage[0].images[0].path, "medium")} alt="" aria-hidden className="pointer-events-none absolute -right-10 top-1/2 w-[46%] -translate-y-1/2 rotate-6 object-contain opacity-60 blur-lg transition duration-700 group-hover:scale-110 group-hover:opacity-80" />}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" />
+          <div className="pointer-events-none absolute -left-24 top-0 size-[380px] rounded-full bg-lime/30 blur-[120px]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+          <div className="relative max-w-xl">
             <div className="flex items-center gap-3">
-              <InstagramIcon className="size-9" />
-              <CheckeredFlagIcon className="size-7 opacity-80" />
+              <InstagramIcon className="size-9 text-lime" />
+              <CheckeredFlagIcon className="size-7 text-lime/70" />
             </div>
             <h2 className="mt-4 text-2xl sm:text-3xl">Una comunidad que colecciona la emoción</h2>
-            <p className="mt-2 text-white/85">Lanzamientos en vivo, llegadas de la semana, sorteos y la mejor conversación sobre autos a escala en Chile. Súmate en Instagram.</p>
+            <p className="mt-2 text-ink-300">Lanzamientos en vivo, llegadas de la semana, sorteos y la mejor conversación sobre autos a escala en Chile. Súmate en Instagram.</p>
           </div>
-          <span className="btn h-12 shrink-0 bg-white px-6 text-sm text-ink group-hover:bg-ink group-hover:text-white">
+          <span className="btn relative h-12 shrink-0 bg-lime px-6 text-sm text-ink transition group-hover:bg-white">
             Seguir a @tiowheels <ArrowRight className="size-4" aria-hidden />
           </span>
         </a>
