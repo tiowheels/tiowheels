@@ -316,6 +316,25 @@ function Row({
           <button type="button" aria-label="Editar" onClick={onEdit} className={cn("flex size-9 items-center justify-center rounded-lg hover:bg-ink-50", editing ? "bg-ink text-white hover:bg-ink" : "text-ink-500")}>
             <Pencil className="size-4" />
           </button>
+          <button
+            type="button"
+            aria-label={`Eliminar ${item.name}`}
+            disabled={pending}
+            onClick={() => {
+              if (item.children.length > 0) {
+                alert(`"${item.name}" tiene ${item.children.length} ${item.children.length === 1 ? "subcategoría" : "subcategorías"}. Elimínalas o muévelas primero.`);
+                return;
+              }
+              const aviso =
+                item.total > 0
+                  ? `¿Eliminar la categoría "${item.name}"? Se quitará de ${item.total} productos. Los productos no se borran.`
+                  : `¿Eliminar la categoría "${item.name}"?`;
+              if (confirm(aviso)) run(() => deleteCategory({ id: item.id }));
+            }}
+            className="flex size-9 items-center justify-center rounded-lg text-ink-500 hover:bg-danger/10 hover:text-danger disabled:opacity-40"
+          >
+            <Trash2 className="size-4" />
+          </button>
         </div>
       </div>
 
@@ -359,17 +378,6 @@ function Row({
             </button>
             <button type="button" onClick={onDone} className="btn-ghost btn-md">
               Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={pending || item.total > 0 || item.children.length > 0}
-              onClick={() => {
-                if (confirm(`¿Eliminar la categoría “${item.name}”?`)) run(() => deleteCategory({ id: item.id }), onDone);
-              }}
-              className="btn-ghost btn-md ml-auto text-danger disabled:opacity-40"
-              title={item.total > 0 ? "Tiene productos asociados" : item.children.length > 0 ? "Tiene subcategorías" : "Eliminar"}
-            >
-              <Trash2 className="size-4" /> Eliminar
             </button>
           </div>
         </form>

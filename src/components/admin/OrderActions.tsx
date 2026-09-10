@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Ban, Printer, MessageCircle, Save, Loader2, Mail } from "lucide-react";
+import { CheckCircle2, Ban, Printer, MessageCircle, Save, Loader2, Mail, Trash2 } from "lucide-react";
 import type { OrderStatus, PaymentStatus } from "@/generated/prisma/enums";
 import { cn } from "@/lib/format";
-import { updateOrderStatus, markOrderPaid, cancelOrder, saveAdminNote, type ActionResult } from "@/app/admin/(panel)/pedidos/actions";
+import { updateOrderStatus, markOrderPaid, cancelOrder, deleteOrder, saveAdminNote, type ActionResult } from "@/app/admin/(panel)/pedidos/actions";
 import { ORDER_STATUS, ORDER_STATUS_LIST, whatsappTo, orderWhatsappMessage } from "./labels";
 
 type OrderLite = { id: string; number: number; status: OrderStatus; paymentStatus: PaymentStatus; firstName: string; phone: string | null; email: string | null; total: number; adminNote: string | null; carrier?: string | null; trackingCode?: string | null };
@@ -22,12 +22,14 @@ export function OrderActions({ order }: { order: OrderLite }) {
   }
   const [status, setStatus] = useState<OrderStatus>(order.status);
 
-  function run(fn: () => Promise<ActionResult>) {
+  function run(fn: () => Promise<ActionResult>, irA?: string) {
     setMsg(null);
     start(async () => {
       const r = await fn();
       setMsg(r.ok ? { ok: true, text: r.message ?? "Listo" } : { ok: false, text: r.error });
-      if (r.ok) router.refresh();
+      if (!r.ok) return;
+      if (irA) router.push(irA);
+      router.refresh();
     });
   }
 
@@ -99,6 +101,18 @@ export function OrderActions({ order }: { order: OrderLite }) {
         )}
         <button type="button" onClick={() => window.print()} className="btn-outline btn-md justify-start">
           <Printer className="size-4" /> Imprimir
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            const repone = order.status !== "CANCELLED" && order.status !== "REFUNDED";
+            const aviso = `¿Eliminar el pedido #${order.number} del historial? Esto no se puede deshacer.${repone ? " Se repondrá el stock de sus productos." : ""}\n\nSi fue una venta real, es mejor cancelarlo en vez de borrarlo.`;
+            if (confirm(aviso)) run(() => deleteOrder({ id: order.id, restock: true }), "/admin/pedidos");
+          }}
+          className="btn-ghost btn-md justify-start text-danger hover:bg-danger/10"
+        >
+          <Trash2 className="size-4" /> Eliminar pedido
         </button>
       </div>
 

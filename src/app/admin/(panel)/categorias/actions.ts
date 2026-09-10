@@ -88,15 +88,15 @@ export async function moveCategory(input: { id: string; direction: "up" | "down"
   return { ok: true };
 }
 
+/** Elimina la categoría y la quita de sus productos. Los productos no se borran. */
 export async function deleteCategory(input: { id: string }): Promise<ActionResult> {
   await requireAdmin();
-  const c = await db.category.findUnique({ where: { id: input.id }, select: { id: true, _count: { select: { products: true, children: true } } } });
+  const c = await db.category.findUnique({ where: { id: input.id }, select: { id: true, name: true, _count: { select: { products: true, children: true } } } });
   if (!c) return { ok: false, error: "Categoría no encontrada" };
-  if (c._count.products > 0) return { ok: false, error: `Tiene ${c._count.products} productos asociados. Reasígnalos antes de eliminarla.` };
-  if (c._count.children > 0) return { ok: false, error: "Tiene subcategorías. Elimínalas o muévelas primero." };
+  if (c._count.children > 0) return { ok: false, error: `"${c.name}" tiene ${c._count.children} ${c._count.children === 1 ? "subcategoría" : "subcategorías"}. Elimínalas o muévelas primero.` };
   await db.category.delete({ where: { id: c.id } });
   revalidate();
-  return { ok: true, message: "Categoría eliminada" };
+  return { ok: true, message: c._count.products > 0 ? `"${c.name}" eliminada y quitada de ${c._count.products} productos` : `"${c.name}" eliminada` };
 }
 
 /* ---------- Etiquetas (los "lotes": Básicos 53, Premium 2…) ---------- */

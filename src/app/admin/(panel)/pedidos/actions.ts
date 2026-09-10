@@ -144,3 +144,30 @@ export async function saveAdminNote(input: { id: string; note: string }): Promis
   revalidateOrder(parsed.data.id);
   return { ok: true, message: "Nota guardada" };
 }
+
+/**
+ * Borra el pedido del historial. Si todavía descontaba stock (no estaba cancelado),
+ * primero lo repone. Pensado para pedidos de prueba: no se puede deshacer.
+ */
+export async function deleteOrder(input: { id: string; restock?: boolean }): Promise<ActionResult> {
+  await requireAdmin();
+  const id = z.string().min(1).parse(input.id);
+  const restock = input.restock !== false;
+  const order = await db.order.findUnique({ where: { id }, select: { number: true, status: true, items: { select: { productId: true, quantity: true } } } });
+  if (!order) return { ok: false, error: "Pedido no encontrado" };
+  const descontaba = order.status !== "CANCELLED" && order.status !== "REFUNDED";
+  await db.$transaction(async (tx) => {
+    if (restock && descontaba) {
+      for (const it of order.items) {
+        if (!it.productId) continue;
+        await tx.product.updateMany({ where: { id: it.productId }, data: { stock: { increment: it.quantity }, totalSales: { decrement: it.quantity } } });
+      }
+    }
+    await tx.order.delete({ where: { id } });
+  });
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin");
+  revalidatePath("/admin/productos");
+  revalidatePath("/");
+  return { ok: true, message: restock && descontaba ? `Pedido #${order.number} eliminado y stock repuesto` : `Pedido #${order.number} eliminado` };
+}
