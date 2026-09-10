@@ -170,14 +170,14 @@ export default async function ProductPage({ params }: { params: Params }) {
               <RoadIcon className="size-5 shrink-0 text-lime-700" />
               <div>
                 <div className="font-bold">Envíos a todo Chile</div>
-                <div className="text-xs text-ink-500">Por pagar al recibir, vía Starken u otros couriers.</div>
+                <div className="text-xs text-ink-500">Por pagar al recibir, vía Blue Express o Starken.</div>
               </div>
             </li>
             <li className="flex gap-3 sm:flex-col sm:gap-2">
               <GarageIcon className="size-5 shrink-0 text-lime-700" />
               <div>
                 <div className="font-bold">Retiro sin costo</div>
-                <div className="text-xs text-ink-500">Coordinamos el retiro por WhatsApp.</div>
+                <div className="text-xs text-ink-500">Metro El Llano o dirección comercial.</div>
               </div>
             </li>
             <li className="flex gap-3 sm:flex-col sm:gap-2">

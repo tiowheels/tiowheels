@@ -5,11 +5,11 @@ import { safeJsonLd } from "@/lib/seo";
 export const FAQ_ITEMS = [
   {
     q: "¿Cómo se envía mi pedido?",
-    a: "Despachamos a todo Chile con envío por pagar vía Starken u otros couriers. Preparamos y despachamos tu pedido en 1 a 3 días hábiles desde que se confirma el pago.",
+    a: "Despachamos a todo Chile con envío por pagar vía Blue Express o Starken. Preparamos y despachamos tu pedido en 1 a 3 días hábiles desde que se confirma el pago.",
   },
   {
     q: "¿Puedo retirar mi compra?",
-    a: "Sí, el retiro es gratis. Al finalizar la compra elige retiro y coordinamos día y hora por WhatsApp.",
+    a: "Sí, el retiro es gratis en Metro El Llano o en nuestra dirección comercial. Al finalizar la compra elige retiro y coordinamos día y hora por WhatsApp.",
   },
   {
     q: "¿Qué medios de pago aceptan?",

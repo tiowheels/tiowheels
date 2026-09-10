@@ -70,7 +70,7 @@ export default function TermsPage() {
             <b>Tiempos:</b> los pedidos se procesan en 1 a 3 días hábiles y el envío tarda entre 2 y 7 días hábiles, según tu ubicación.
           </li>
           <li>
-            <b>Costos:</b> el envío es por pagar. El costo depende del destino y del peso del paquete, y se cancela directamente al courier (Starken u otros) al recibir tu pedido. También puedes coordinar el retiro sin costo.
+            <b>Costos:</b> el envío es por pagar. El costo depende del destino y del peso del paquete, y se cancela directamente al courier (Blue Express o Starken) al recibir tu pedido. También puedes retirar sin costo en Metro El Llano o en nuestra dirección comercial.
           </li>
           <li>
             <b>Responsabilidad:</b> nos encargamos de que tu pedido salga en perfectas condiciones. Una vez entregado al courier, no somos responsables por retrasos o daños causados por el transportista, pero te ayudaremos a resolver cualquier problema.

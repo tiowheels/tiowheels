@@ -118,13 +118,13 @@ export function CartPageView() {
           <li className="flex gap-2.5">
             <Truck className="mt-0.5 size-4 shrink-0 text-lime-700" aria-hidden />
             <span>
-              <b>El costo de envío se paga al courier al recibir</b> (Starken u otros). Despachamos a todo Chile.
+              <b>El costo de envío se paga al courier al recibir</b> (Blue Express o Starken). Despachamos a todo Chile.
             </span>
           </li>
           <li className="flex gap-2.5">
             <Store className="mt-0.5 size-4 shrink-0 text-lime-700" aria-hidden />
             <span>
-              <b>Retiro gratis</b>, coordinado por WhatsApp.
+              <b>Retiro gratis</b> en Metro El Llano o en nuestra dirección comercial.
             </span>
           </li>
           <li className="flex gap-2.5">

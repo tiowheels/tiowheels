@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TagInput } from "./TagInput";
 import Link from "next/link";
 import { Save, Loader2, Trash2, ArrowUp, ArrowDown, Camera, ImagePlus, X, Copy, ExternalLink, Star } from "lucide-react";
 import { cn, slugify } from "@/lib/format";
@@ -20,13 +21,15 @@ export type ProductFormData = {
   brand: string | null;
   description: string | null;
   categoryIds: string[];
+  tagNames: string[];
   images: { id: string; path: string; position: number }[];
   orderCount: number;
 };
 
 export type CategoryNode = { id: string; name: string; children: { id: string; name: string }[] };
+export type TagOption = { name: string; count: number };
 
-export function ProductForm({ product, brands, categories, duplicated }: { product: ProductFormData | null; brands: string[]; categories: CategoryNode[]; duplicated?: boolean }) {
+export function ProductForm({ product, brands, categories, tags = [], duplicated }: { product: ProductFormData | null; brands: string[]; categories: CategoryNode[]; tags?: TagOption[]; duplicated?: boolean }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -265,6 +268,12 @@ export function ProductForm({ product, brands, categories, duplicated }: { produ
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Etiquetas */}
+        <section className="card p-4 md:p-5">
+          <h2 className="mb-2 text-base">Etiquetas</h2>
+          <TagInput initial={product?.tagNames ?? []} suggestions={tags} />
         </section>
 
         {/* Guardar */}

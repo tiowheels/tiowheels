@@ -7,7 +7,7 @@ const MESSAGES = [
   { icon: "🚚", text: "Envíos a todo Chile · envío por pagar al recibir" },
   { icon: "🏁", text: "Más de 3.500 autos a escala disponibles" },
   { icon: "⚡", text: "Compra 24/7 · pago seguro con Flow y transferencia" },
-  { icon: "🏪", text: "Retiro gratis coordinado por WhatsApp" },
+  { icon: "🏪", text: "Retiro gratis en Metro El Llano o dirección comercial" },
 ];
 
 export function AnnouncementBar() {

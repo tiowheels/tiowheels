@@ -23,7 +23,7 @@ export type StoreSettings = {
 };
 
 const STORE_DEFAULTS: StoreSettings = {
-  pickupAddress: "Coordinar retiro por WhatsApp",
+  pickupAddress: "Metro El Llano o dirección comercial.",
   shippingNote: "Envío por pagar: el costo lo pagas al courier al recibir tu pedido. Despachamos en 1 a 3 días hábiles.",
   transferEnabled: true,
   transferDetails: "",

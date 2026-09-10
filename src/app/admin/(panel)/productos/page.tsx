@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { formatCLP, normalizeText, cn } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
 import { getCategoryTree } from "@/lib/catalog";
+import { getTags } from "@/app/admin/_lib/products";
 import { ProductStatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader, EmptyState } from "@/components/admin/PageHeader";
 import { Pagination } from "@/components/admin/Pagination";
@@ -34,11 +35,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const q = str(sp.q).trim();
   const disp = str(sp.disp) || "stock"; // stock | agotados | ultimo | todos
   const cat = str(sp.cat);
+  const etiqueta = str(sp.etiqueta);
   const estado = str(sp.estado);
   const orden = str(sp.orden) || "reciente";
   const page = Math.max(1, parseInt(str(sp.page) || "1", 10) || 1);
 
-  const tree = await getCategoryTree();
+  const [tree, allTags] = await Promise.all([getCategoryTree(), getTags()]);
   const flatCats: { id: string; name: string; depth: number }[] = [];
   for (const r of tree) {
     flatCats.push({ id: r.id, name: r.name, depth: 0 });
@@ -51,6 +53,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   else if (disp === "ultimo") conds.push(Prisma.sql`p."stock" = 1`);
   if (estado === "ACTIVE" || estado === "DRAFT" || estado === "ARCHIVED") conds.push(Prisma.sql`p."status" = ${estado}::"ProductStatus"`);
   else if (!estado) conds.push(Prisma.sql`p."status" <> 'ARCHIVED'`);
+  if (etiqueta) conds.push(Prisma.sql`EXISTS (SELECT 1 FROM "_ProductToTag" pt WHERE pt."A" = p."id" AND pt."B" = ${etiqueta})`);
   if (cat) {
     const node = flatCats.find((c) => c.id === cat);
     const ids = node ? [cat, ...(tree.find((r) => r.id === cat)?.children.map((c) => c.id) ?? [])] : [cat];
@@ -90,7 +93,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   ]);
   const ids = rows.map((r) => r.id);
   const found = ids.length
-    ? await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, slug: true, brand: true, price: true, compareAtPrice: true, stock: true, status: true, featured: true, totalSales: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } })
+    ? await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, slug: true, brand: true, price: true, compareAtPrice: true, stock: true, status: true, featured: true, totalSales: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } } } })
     : [];
   const byId = new Map(found.map((p) => [p.id, p]));
   const products = ids.map((id) => byId.get(id)!).filter(Boolean);
@@ -120,7 +123,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
       <FilterForm action="/admin/productos" className="card mb-4 space-y-2 p-3">
         <input type="hidden" name="disp" value={disp} />
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto_auto]">
           <label className="relative">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
             <input type="search" name="q" defaultValue={q} enterKeyHint="search" placeholder="Buscar por nombre, marca, categoría…" className="input pl-10" />
@@ -131,6 +134,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               <option key={c.id} value={c.id}>
                 {c.depth ? "— " : ""}
                 {c.name}
+              </option>
+            ))}
+          </select>
+          <select name="etiqueta" defaultValue={etiqueta} className="input sm:w-44" aria-label="Etiqueta">
+            <option value="">Todas las etiquetas</option>
+            {allTags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.count})
               </option>
             ))}
           </select>
@@ -182,6 +193,15 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                       <ProductStatusBadge status={p.status} />
                       {p.featured && <Star className="size-3.5 fill-lime text-lime-700" />}
                     </div>
+                    {p.tags.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {p.tags.map((t) => (
+                          <span key={t.id} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-700">
+                            {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3">
@@ -205,6 +225,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                     Producto
                   </th>
                   <th className="px-4 py-3">Marca</th>
+                  <th className="px-4 py-3">Etiquetas</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3 text-right">Precio</th>
                   <th className="px-4 py-3 text-right">Stock</th>
@@ -229,6 +250,19 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                       </div>
                     </td>
                     <td className="px-4 py-2 text-ink-600">{p.brand ?? "—"}</td>
+                    <td className="px-4 py-2">
+                      {p.tags.length ? (
+                        <span className="flex flex-wrap gap-1">
+                          {p.tags.map((t) => (
+                            <Link key={t.id} href={`/admin/productos?etiqueta=${t.id}&disp=todos`} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-[11px] font-semibold text-ink-700 hover:bg-ink hover:text-white">
+                              {t.name}
+                            </Link>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="text-ink-300">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2">
                       <ProductStatusBadge status={p.status} />
                     </td>

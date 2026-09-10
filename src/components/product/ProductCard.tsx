@@ -57,7 +57,7 @@ export function ProductCard({ product, priority, className }: ProductCardProps) 
       href={`/producto/${product.slug}`}
       aria-label={`${product.name}, ${formatCLP(product.price)}`}
       className={cn(
-        "group card relative flex flex-col overflow-hidden ring-1 ring-transparent transition-all duration-300 hover:-translate-y-0.5 hover:shadow-pop hover:ring-ink-100",
+        "@container group card relative flex flex-col overflow-hidden ring-1 ring-transparent transition-all duration-300 hover:-translate-y-0.5 hover:shadow-pop hover:ring-ink-100",
         className,
       )}
     >
@@ -80,18 +80,20 @@ export function ProductCard({ product, priority, className }: ProductCardProps) 
           {soldOut ? <Badge tone="dark">Agotado</Badge> : product.stock === 1 ? <Badge tone="warn">Última unidad</Badge> : isNew ? <Badge tone="lime">Nuevo</Badge> : null}
           {discount > 0 ? <Badge tone="danger" className="bg-danger text-white">-{discount}%</Badge> : null}
         </div>
-        <span className="absolute right-3 top-3 inline-flex h-6 items-center gap-1 rounded-full bg-white/90 px-2 text-[10px] font-bold tracking-wider text-ink-700 shadow-sm backdrop-blur">
+        <span className="absolute right-3 top-3 hidden h-6 items-center gap-1 rounded-full bg-white/90 @[11rem]:inline-flex px-2 text-[10px] font-bold tracking-wider text-ink-700 shadow-sm backdrop-blur">
           <WheelIcon className="size-3" /> 1:64
         </span>
-        {collection ? (
-          <span className="absolute bottom-3 left-3 inline-flex h-6 max-w-[80%] items-center gap-1 truncate rounded-full bg-ink/85 px-2.5 text-[10px] font-bold uppercase tracking-wider text-lime shadow-sm backdrop-blur">
-            <CheckeredFlagIcon className="size-3 shrink-0" /> <span className="truncate">{collection.name}</span>
-          </span>
-        ) : null}
       </div>
 
       {/* Contenido */}
       <div className="flex flex-1 flex-col gap-1.5 p-3.5 sm:p-4">
+        {collection ? (
+          <span className="inline-flex max-w-full items-center gap-1 self-start rounded-md bg-lime-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-lime-700">
+            <CheckeredFlagIcon className="size-3 shrink-0" />
+            <span className="truncate">{collection.name}</span>
+          </span>
+        ) : null}
+
         <span className="inline-flex min-w-0 items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-400">
           <CarIcon className="size-3.5 shrink-0" />
           <span className="truncate">{product.brand ?? "Hot Wheels"}</span>
@@ -106,7 +108,7 @@ export function ProductCard({ product, priority, className }: ProductCardProps) 
               {discount > 0 ? <s className="text-xs font-medium text-ink-400">{formatCLP(product.compareAtPrice!)}</s> : null}
             </div>
             <div className="mt-1.5 flex min-w-0 items-center gap-1.5" aria-label={soldOut ? "Sin stock" : `${product.stock} disponibles`}>
-              <span className="flex shrink-0 gap-0.5">
+              <span className="hidden shrink-0 gap-0.5 @[9rem]:flex">
                 {[1, 2, 3].map((n) => (
                   <span key={n} className={cn("h-1.5 w-3 rounded-full", n <= stockLevel ? (stockLevel === 1 ? "bg-flame" : "bg-lime") : "bg-ink-100")} />
                 ))}

@@ -238,7 +238,7 @@ export function CheckoutForm({ flowEnabled, transferEnabled, shippingNote, picku
                   icon={<Package className="size-5" />}
                   title="Retiro"
                   badge="Gratis"
-                  description="Coordinamos el retiro por WhatsApp."
+                  description="Metro El Llano o dirección comercial."
                 />
               </div>
 

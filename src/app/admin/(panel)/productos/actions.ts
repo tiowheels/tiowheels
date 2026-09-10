@@ -59,7 +59,22 @@ const productSchema = z.object({
   brand: z.string().trim().max(80).optional().default(""),
   description: z.string().trim().max(10_000).optional().default(""),
   categoryIds: z.array(z.string()).default([]),
+  tagNames: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 });
+
+/** Devuelve los ids de las etiquetas, creando las que no existan. */
+async function resolveTags(names: string[]): Promise<string[]> {
+  const ids: string[] = [];
+  const vistos = new Set<string>();
+  for (const name of names) {
+    const slug = slugify(name);
+    if (!slug || vistos.has(slug)) continue;
+    vistos.add(slug);
+    const tag = await db.tag.upsert({ where: { slug }, create: { slug, name }, update: {}, select: { id: true } });
+    ids.push(tag.id);
+  }
+  return ids;
+}
 
 async function uniqueSlug(base: string, excludeId?: string) {
   let slug = base || "producto";
@@ -91,11 +106,13 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
     brand: formData.get("brand") ?? "",
     description: formData.get("description") ?? "",
     categoryIds: formData.getAll("categoryIds").map(String),
+    tagNames: formData.getAll("tagNames").map(String).map((t) => t.trim().replace(/\s+/g, " ")).filter(Boolean),
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revisa los datos del formulario" };
   const d = parsed.data;
   const base = slugify(d.slug || d.name);
   const slug = await uniqueSlug(base, id ?? undefined);
+  const tagIds = await resolveTags(d.tagNames);
   const data = {
     name: d.name,
     slug,
@@ -107,6 +124,7 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
     brand: d.brand || null,
     description: d.description || null,
     categories: { set: d.categoryIds.map((cid) => ({ id: cid })) },
+    tags: { set: tagIds.map((tid) => ({ id: tid })) },
   };
 
   let productId = id;
@@ -118,7 +136,7 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
       oldSlug = prev.slug;
       await db.product.update({ where: { id: productId }, data });
     } else {
-      const created = await db.product.create({ data: { ...data, categories: { connect: d.categoryIds.map((cid) => ({ id: cid })) } }, select: { id: true } });
+      const created = await db.product.create({ data: { ...data, categories: { connect: d.categoryIds.map((cid) => ({ id: cid })) }, tags: { connect: tagIds.map((tid) => ({ id: tid })) } }, select: { id: true } });
       productId = created.id;
     }
   } catch (e) {
