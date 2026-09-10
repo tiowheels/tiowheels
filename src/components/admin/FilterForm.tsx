@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SlidersHorizontal, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/format";
 
 /**
  * Formulario GET de filtros: los <select> envían al cambiar y el texto al presionar Enter/buscar.
@@ -32,5 +34,26 @@ export function FilterForm({ action, children, className }: { action: string; ch
     >
       {children}
     </form>
+  );
+}
+
+/**
+ * En el celular los selectores ocupaban media pantalla, así que quedan detrás de
+ * un botón "Filtros". En escritorio se ven siempre.
+ */
+export function CollapsibleFilters({ active = 0, children, className }: { active?: number; children: React.ReactNode; className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="btn-outline btn-md w-full justify-between sm:hidden">
+        <span className="flex items-center gap-2">
+          <SlidersHorizontal className="size-4" />
+          Filtros
+          {active > 0 && <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-lime px-1.5 text-[11px] font-black text-ink">{active}</span>}
+        </span>
+        <ChevronDown className={cn("size-4 transition", open && "rotate-180")} />
+      </button>
+      <div className={cn(open ? "grid" : "hidden", "gap-2 sm:!grid", className)}>{children}</div>
+    </>
   );
 }

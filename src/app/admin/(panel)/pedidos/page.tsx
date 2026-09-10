@@ -9,7 +9,7 @@ import { ORDER_STATUS, ORDER_CHANNEL, PAYMENT_METHOD } from "@/components/admin/
 import { OrderStatusBadge, ChannelBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader, EmptyState } from "@/components/admin/PageHeader";
 import { Pagination } from "@/components/admin/Pagination";
-import { FilterForm } from "@/components/admin/FilterForm";
+import { FilterForm, CollapsibleFilters } from "@/components/admin/FilterForm";
 
 export const metadata: Metadata = { title: "Pedidos" };
 export const dynamic = "force-dynamic";
@@ -68,11 +68,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
         </Link>
       </PageHeader>
 
-      <FilterForm action="/admin/pedidos" className="card mb-4 grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]">
-        <label className="relative">
+      <FilterForm action="/admin/pedidos" className="card mb-4 space-y-2 p-3">
+        <label className="relative block">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
           <input type="search" name="q" defaultValue={q} enterKeyHint="search" placeholder="N°, nombre, correo o teléfono" className="input pl-10" />
         </label>
+        <CollapsibleFilters active={[estado, canal, desde, hasta].filter(Boolean).length} className="sm:grid-cols-2 lg:grid-cols-4">
         <select name="estado" defaultValue={estado} className="input" aria-label="Estado">
           <option value="">Todos los estados</option>
           {Object.entries(ORDER_STATUS).map(([k, v]) => (
@@ -91,8 +92,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
         </select>
         <input type="date" name="desde" defaultValue={desde} className="input" aria-label="Desde" />
         <input type="date" name="hasta" defaultValue={hasta} className="input" aria-label="Hasta" />
+        </CollapsibleFilters>
         {hasFilters && (
-          <Link href="/admin/pedidos" className="btn-ghost btn-md sm:col-span-2 lg:col-span-5 lg:justify-self-start">
+          <Link href="/admin/pedidos" className="btn-ghost btn-md">
             Limpiar filtros
           </Link>
         )}

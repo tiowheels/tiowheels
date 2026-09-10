@@ -10,7 +10,7 @@ import { getTags } from "@/app/admin/_lib/products";
 import { ProductStatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader, EmptyState } from "@/components/admin/PageHeader";
 import { Pagination } from "@/components/admin/Pagination";
-import { FilterForm } from "@/components/admin/FilterForm";
+import { FilterForm, CollapsibleFilters } from "@/components/admin/FilterForm";
 import { ProductQuickEdit } from "@/components/admin/ProductQuickEdit";
 
 export const metadata: Metadata = { title: "Productos" };
@@ -131,12 +131,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
       <FilterForm action="/admin/productos" className="card mb-4 space-y-2 p-3">
         <input type="hidden" name="disp" value={dispParam} />
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto_auto]">
-          <label className="relative">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
-            <input type="search" name="q" defaultValue={q} enterKeyHint="search" placeholder="Buscar por nombre, marca, categoría…" className="input pl-10" />
-          </label>
-          <select name="cat" defaultValue={cat} className="input sm:w-52" aria-label="Categoría">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+          <input type="search" name="q" defaultValue={q} enterKeyHint="search" placeholder="Buscar por nombre, marca, categoría…" className="input pl-10" />
+        </label>
+        <CollapsibleFilters active={[cat, etiqueta, estado].filter(Boolean).length + (orden !== "reciente" ? 1 : 0)} className="sm:grid-cols-[1fr_1fr_auto_auto]">
+          <select name="cat" defaultValue={cat} className="input" aria-label="Categoría">
             <option value="">Todas las categorías</option>
             {flatCats.map((c) => (
               <option key={c.id} value={c.id}>
@@ -145,7 +145,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               </option>
             ))}
           </select>
-          <select name="etiqueta" defaultValue={etiqueta} className="input sm:w-44" aria-label="Etiqueta">
+          <select name="etiqueta" defaultValue={etiqueta} className="input" aria-label="Etiqueta">
             <option value="">Todas las etiquetas</option>
             {allTags.map((t) => (
               <option key={t.id} value={t.id}>
@@ -166,7 +166,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               </option>
             ))}
           </select>
-        </div>
+        </CollapsibleFilters>
         <div className="flex gap-2 overflow-x-auto scrollbar-none">
           {dispChips.map((c) => (
             <Link key={c.value} href={chipHref(c.value)} className={cn("chip shrink-0", disp === c.value && "chip-active")}>
