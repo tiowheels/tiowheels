@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { createHash, randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -134,12 +136,14 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
     ]);
     const link = `${SITE.url}/cuenta/recuperar/${token}`;
     if (process.env.NODE_ENV !== "production") console.info(`[auth] enlace de recuperación para ${mail}: ${link}`);
-    await sendMail({
-      to: mail,
-      subject: `Crea tu nueva contraseña · ${SITE.name}`,
-      text: `Hola${user.name ? ` ${user.name}` : ""},\n\nPara crear una nueva contraseña en ${SITE.name} entra a este enlace (válido por 1 hora):\n${link}\n\nSi no lo pediste, ignora este correo.`,
-      html: resetEmailHtml(user.name, link),
-    });
+    after(() =>
+      sendMail({
+        to: mail,
+        subject: `Crea tu nueva contraseña · ${SITE.name}`,
+        text: `Hola${user.name ? ` ${user.name}` : ""},\n\nPara crear una nueva contraseña en ${SITE.name} entra a este enlace (válido por 1 hora):\n${link}\n\nSi no lo pediste, ignora este correo.`,
+        html: resetEmailHtml(user.name, link),
+      }),
+    );
   }
   return { ok: true, email: mail, message: "Si el email está registrado, te enviamos un enlace para crear tu nueva contraseña. Revisa también la carpeta de spam." };
 }

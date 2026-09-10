@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { db, OrderChannel, OrderStatus, PaymentMethod, PaymentStatus, ProductStatus, ShippingMethod } from "@/lib/db";
@@ -323,7 +324,8 @@ export async function syncFlowPayment(token: string): Promise<FlowSyncResult> {
       raw: status,
       paidAt: status.paymentData?.date ? new Date(status.paymentData.date) : undefined,
     });
-    if (changed) await sendOrderEmails(payment.orderId);
+    // Se envían después de responder: Flow y el cliente no deben esperar al servidor de correo
+    if (changed) after(() => sendOrderEmails(payment.orderId));
     return { orderId: payment.orderId, outcome: "paid" };
   }
 

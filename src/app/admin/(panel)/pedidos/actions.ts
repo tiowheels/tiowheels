@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db, OrderStatus } from "@/lib/db";
@@ -41,10 +43,10 @@ export async function updateOrderStatus(input: { id: string; status: OrderStatus
   let notice = "";
   if (order.email && status !== order.status) {
     if (status === "SHIPPED") {
-      await sendShippedEmail(id);
+      after(() => sendShippedEmail(id));
       notice = " y aviso enviado al cliente";
     } else if (status === "COMPLETED") {
-      await sendDeliveredEmail(id);
+      after(() => sendDeliveredEmail(id));
       notice = " y correo de agradecimiento enviado";
     }
   }
@@ -85,7 +87,7 @@ export async function markOrderShipped(input: { id: string; carrier: string; tra
       ...(order.paymentStatus !== "PAID" ? { paymentStatus: "PAID", paidAt: new Date() } : {}),
     },
   });
-  if (order.email) await sendShippedEmail(id);
+  if (order.email) after(() => sendShippedEmail(id));
   revalidateOrder(id);
   return { ok: true, message: order.email ? "Pedido marcado como enviado y aviso enviado al cliente" : "Pedido marcado como enviado (sin email para avisar)" };
 }

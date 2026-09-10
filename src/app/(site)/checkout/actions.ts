@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { db, PaymentMethod } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { createFlowPayment, flowConfigured } from "@/lib/flow";
@@ -56,6 +58,9 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
     }
   }
 
-  await sendOrderEmails(order);
+  // Los correos salen después de responder: el servidor SMTP tarda ~3 s por mensaje
+  // y el cliente no debe esperarlos para ver su pedido.
+  const creado = order;
+  after(() => sendOrderEmails(creado));
   return { ok: true, redirectUrl: `/pedido/${order.id}`, orderId: order.id };
 }

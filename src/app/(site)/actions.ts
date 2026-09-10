@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
@@ -38,11 +40,13 @@ export async function sendContact(_prev: unknown, formData: FormData) {
   }
   const { name, email, message, phone } = parsed.data;
   await db.contactMessage.create({ data: { name, email, phone: phone || null, message } });
-  await sendMail({
-    to: SITE.email,
-    subject: `Contacto web: ${name}`,
-    html: `<p><b>${name}</b> (${email}${phone ? ", " + phone : ""}) escribió:</p><p>${message.replace(/\n/g, "<br/>")}</p>`,
-    text: `${name} (${email}) escribió:\n\n${message}`,
-  });
+  after(() =>
+    sendMail({
+      to: SITE.email,
+      subject: `Contacto web: ${name}`,
+      html: `<p><b>${name}</b> (${email}${phone ? ", " + phone : ""}) escribió:</p><p>${message.replace(/\n/g, "<br/>")}</p>`,
+      text: `${name} (${email}) escribió:\n\n${message}`,
+    }),
+  );
   return { ok: true, message: "Mensaje enviado. Te responderemos a la brevedad." };
 }
