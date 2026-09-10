@@ -36,7 +36,7 @@ export function QuickSale() {
   const [hydrated, setHydrated] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchProduct[]>([]);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true); // se buscan también los agotados; el stock igual se valida al registrar
   const [searching, setSearching] = useState(false);
   const [open, setOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);

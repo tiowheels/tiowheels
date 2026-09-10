@@ -33,7 +33,9 @@ const ORDER_OPTIONS = [
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const q = str(sp.q).trim();
-  const disp = str(sp.disp) || "stock"; // stock | agotados | ultimo | todos
+  const dispParam = str(sp.disp); // stock | agotados | ultimo | todos
+  // Al buscar se muestran los autos con y sin stock; sin búsqueda, la lista parte por los que hay
+  const disp = dispParam || (q ? "todos" : "stock");
   const cat = str(sp.cat);
   const etiqueta = str(sp.etiqueta);
   const estado = str(sp.estado);
@@ -128,7 +130,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </PageHeader>
 
       <FilterForm action="/admin/productos" className="card mb-4 space-y-2 p-3">
-        <input type="hidden" name="disp" value={disp} />
+        <input type="hidden" name="disp" value={dispParam} />
         <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto_auto]">
           <label className="relative">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
