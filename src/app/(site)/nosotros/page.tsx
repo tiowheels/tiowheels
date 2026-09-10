@@ -126,11 +126,8 @@ export default async function AboutPage() {
       {/* COMUNIDAD */}
       <section className="container-x mt-14 md:mt-20">
         <a href={SITE.instagram} target="_blank" rel="noreferrer" className="group relative flex flex-col gap-6 overflow-hidden rounded-card bg-ink p-8 text-white md:flex-row md:items-center md:justify-between md:p-12">
-          {/* Foto de un auto difuminada + destellos lima: los colores de la marca */}
-          {collage[0]?.images[0] && <img src={mediaUrl(collage[0].images[0].path, "medium")} alt="" aria-hidden className="pointer-events-none absolute -right-10 top-1/2 w-[46%] -translate-y-1/2 rotate-6 object-contain opacity-60 blur-lg transition duration-700 group-hover:scale-110 group-hover:opacity-80" />}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" />
-          <div className="pointer-events-none absolute -left-24 top-0 size-[380px] rounded-full bg-lime/30 blur-[120px]" />
           <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+          <div className="pointer-events-none absolute -left-24 top-0 size-[380px] rounded-full bg-lime/25 blur-[120px]" />
           <div className="relative max-w-xl">
             <div className="flex items-center gap-3">
               <InstagramIcon className="size-9 text-lime" />
@@ -138,6 +135,14 @@ export default async function AboutPage() {
             </div>
             <h2 className="mt-4 text-2xl sm:text-3xl">Una comunidad que colecciona la emoción</h2>
             <p className="mt-2 text-ink-300">Lanzamientos en vivo, llegadas de la semana, sorteos y la mejor conversación sobre autos a escala en Chile. Súmate en Instagram.</p>
+          </div>
+          {/* Mosaico de autos del catálogo: se lee como un feed de Instagram */}
+          <div className="pointer-events-none relative hidden shrink-0 -rotate-3 grid-cols-4 gap-2 lg:grid">
+            {collage.slice(0, 4).map((p) => (
+              <span key={p.id} className="size-20 overflow-hidden rounded-2xl bg-white shadow-pop ring-1 ring-white/15">
+                <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" loading="lazy" className="size-full object-cover transition duration-700 group-hover:scale-105" />
+              </span>
+            ))}
           </div>
           <span className="btn relative h-12 shrink-0 bg-lime px-6 text-sm text-ink transition group-hover:bg-white">
             Seguir a @tiowheels <ArrowRight className="size-4" aria-hidden />
