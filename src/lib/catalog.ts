@@ -217,23 +217,35 @@ export const FEATURED_COLLECTIONS = [
   { slug: "hot-rod-dragster", name: "Hot Rod / Drag", blurb: "Gassers y dragsters" },
 ] as const;
 
-export async function getCollectionCards() {
-  const slugs = FEATURED_COLLECTIONS.map((c) => c.slug);
-  const cats = await db.category.findMany({
-    where: { slug: { in: slugs } },
-    select: {
-      slug: true,
-      name: true,
-      imageUrl: true,
-      _count: { select: { products: { where: { status: "ACTIVE", stock: { gt: 0 } } } } },
-      products: { where: { status: "ACTIVE", stock: { gt: 0 }, images: { some: {} } }, orderBy: { totalSales: "desc" }, take: 1, select: { images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } },
-    },
-  });
-  const bySlug = new Map(cats.map((c) => [c.slug, c]));
-  return FEATURED_COLLECTIONS.map((c) => {
-    const cat = bySlug.get(c.slug);
-    return { ...c, count: cat?._count.products ?? 0, image: cat?.products[0]?.images[0]?.path ?? null };
-  }).filter((c) => c.count > 0);
+/**
+ * Tarjetas de "¿Qué estás buscando hoy?": categorías principales al azar en cada visita,
+ * con una foto también al azar entre sus productos con stock.
+ */
+export async function getCollectionCards(take = 12, minProductos = 20) {
+  const rows = await db.$queryRaw<{ slug: string; name: string; n: number; path: string | null }[]>`
+    SELECT c."slug", c."name", cnt.n, img."path"
+    FROM "Category" c
+    JOIN LATERAL (
+      SELECT count(*)::int AS n
+      FROM "_CategoryToProduct" cp
+      JOIN "Product" p ON p."id" = cp."B" AND p."status" = 'ACTIVE' AND p."stock" > 0
+      WHERE cp."A" = c."id"
+    ) cnt ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT t."path" FROM (
+        SELECT i."path"
+        FROM "_CategoryToProduct" cp
+        JOIN "Product" p ON p."id" = cp."B" AND p."status" = 'ACTIVE' AND p."stock" > 0
+        JOIN "ProductImage" i ON i."productId" = p."id" AND i."position" = 0
+        WHERE cp."A" = c."id"
+        ORDER BY p."listedAt" DESC
+        LIMIT 40
+      ) t ORDER BY random() LIMIT 1
+    ) img ON TRUE
+    WHERE c."parentId" IS NULL AND c."slug" <> 'uncategorized' AND cnt.n >= ${minProductos}
+    ORDER BY random()
+    LIMIT ${take}`;
+  return rows.map((r) => ({ slug: r.slug, name: r.name, count: Number(r.n), image: r.path }));
 }
 
 /** Marcas con más productos disponibles (para la portada y filtros). */

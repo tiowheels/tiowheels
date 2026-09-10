@@ -17,7 +17,8 @@ import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { Faq } from "@/components/site/Faq";
 import { safeJsonLd } from "@/lib/seo";
 
-export const revalidate = 120;
+// Se renderiza en cada visita: las colecciones de "¿Qué estás buscando hoy?" son al azar.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: { absolute: `${SITE.name} · Hot Wheels, Matchbox y autos a escala 1:64 en Chile` },
