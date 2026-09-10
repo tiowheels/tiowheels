@@ -206,7 +206,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
             <textarea id="description" name="description" rows={5} defaultValue={product?.description ?? ""} className="input h-auto min-h-28 resize-y py-2.5" placeholder="Serie, año, color, detalles de la tarjeta, estado del blister…" />
           </div>
           <details className="rounded-xl bg-ink-50 px-3 py-2">
-            <summary className="cursor-pointer text-[13px] font-semibold text-ink-600">Dirección en la web (opcional)</summary>
+            <summary className="cursor-pointer text-[13px] font-semibold text-ink-600">Enlace del producto en la tienda (se genera solo)</summary>
             <div className="mt-2 flex items-center gap-2">
               <span className="hidden text-xs text-ink-400 sm:inline">/producto/</span>
               <input
@@ -221,7 +221,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
                 className="input font-mono text-sm"
               />
             </div>
-            <p className="mt-1 text-xs text-ink-400">Se genera desde el nombre; si ya existe se agrega un número.</p>
+            <p className="mt-1 text-xs text-ink-400">Es la dirección con la que se comparte el auto. Se arma sola con el nombre; solo cámbiala si sabes lo que haces.</p>
           </details>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>

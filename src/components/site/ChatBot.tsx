@@ -113,7 +113,7 @@ export function ChatBot() {
           <button
             type="button"
             onClick={() => (abierto ? setAbierto(false) : abrir())}
-            aria-label={abierto ? "Cerrar el chat" : "Abrir el chat con el Tío"}
+            aria-label={abierto ? "Cerrar el chat" : "Abrir el chat con Tío Wheels"}
             className="relative flex size-16 items-center justify-center rounded-full bg-lime shadow-pop ring-2 ring-white transition hover:scale-105 active:scale-95"
           >
             {abierto ? (
@@ -133,7 +133,7 @@ export function ChatBot() {
         {abierto && (
           <motion.aside
             role="dialog"
-            aria-label="Chat con el Tío"
+            aria-label="Chat con Tío Wheels"
             initial={reduce ? false : { opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
@@ -143,9 +143,9 @@ export function ChatBot() {
             <header className="flex items-center gap-3 bg-ink px-4 py-3 text-white">
               <img src="/brand/tio.png" alt="" className="size-10 shrink-0 object-contain" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold leading-tight">El Tío</p>
+                <p className="text-sm font-bold leading-tight">Tío Wheels</p>
                 <p className="flex items-center gap-1.5 text-[11px] text-ink-300">
-                  <span className="size-1.5 rounded-full bg-lime" /> Te ayudo a encontrar tu auto
+                  <span className="size-1.5 rounded-full bg-lime" /> El Tío que siempre sabe lo que hace
                 </p>
               </div>
               <button type="button" onClick={() => setAbierto(false)} aria-label="Cerrar" className="flex size-9 items-center justify-center rounded-full hover:bg-white/10">
