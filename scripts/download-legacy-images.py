@@ -12,8 +12,12 @@ for p in pv:
         u=i['src']
         if u not in seen: seen.add(u); urls.append(u)
 def fetch(u):
-    name=os.path.basename(urlparse(u).path)
-    dest=os.path.join(OUT,name)
+    # IMPORTANTE: se conserva la ruta completa (año/mes/archivo). WooCommerce repite el mismo
+    # nombre de archivo en carpetas de meses distintos; guardar solo el nombre pisa las fotos
+    # de otros productos y termina mostrando el auto equivocado.
+    rel=urlparse(u).path.split('/wp-content/uploads/')[-1].lstrip('/')
+    dest=os.path.join(OUT,rel)
+    os.makedirs(os.path.dirname(dest),exist_ok=True)
     if os.path.exists(dest) and os.path.getsize(dest)>0: return 'skip'
     for attempt in range(3):
         try:

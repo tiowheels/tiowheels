@@ -90,7 +90,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <ul className="divide-y divide-ink-100">
               {order.items.map((it) => (
                 <li key={it.id} className="flex items-center gap-3 px-4 py-3">
-                  <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-cover" />
+                  <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-contain" />
                   <div className="min-w-0 flex-1">
                     {it.product ? (
                       <Link href={`/admin/productos/${it.product.id}`} className="line-clamp-2 text-sm font-semibold hover:underline">

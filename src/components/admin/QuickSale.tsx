@@ -299,7 +299,7 @@ export function QuickSale() {
                 {results.map((p) => (
                   <li key={p.id}>
                     <button type="button" onClick={() => addProduct(p)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-lime-50">
-                      <img src={p.image} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-cover" loading="lazy" />
+                      <img src={p.image} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-contain" loading="lazy" />
                       <div className="min-w-0 flex-1">
                         <div className="line-clamp-2 text-sm font-semibold leading-tight">{p.name}</div>
                         <div className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
@@ -339,7 +339,7 @@ export function QuickSale() {
               {draft.items.map((l) => (
                 <li key={l.key} className="px-3 py-3">
                   <div className="flex items-start gap-3">
-                    <img src={l.image} alt="" className="size-12 shrink-0 rounded-lg bg-ink-50 object-cover" />
+                    <img src={l.image} alt="" className="size-12 shrink-0 rounded-lg bg-ink-50 object-contain" />
                     <div className="min-w-0 flex-1">
                       <div className="line-clamp-2 text-sm font-semibold leading-tight">{l.name}</div>
                       <div className="mt-0.5 text-xs text-ink-500">

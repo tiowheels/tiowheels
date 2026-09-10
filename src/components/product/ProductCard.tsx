@@ -62,7 +62,7 @@ export function ProductCard({ product, priority, className }: ProductCardProps) 
       )}
     >
       {/* Imagen */}
-      <div className="relative aspect-square overflow-hidden bg-ink-50">
+      <div className="relative aspect-[3/4] overflow-hidden bg-ink-50">
         <img
           src={mediaUrl(img?.path, "thumb")}
           alt={img?.alt ?? product.name}

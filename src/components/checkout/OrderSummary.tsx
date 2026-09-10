@@ -21,7 +21,7 @@ export function OrderSummary({ items, subtotal, shippingMethod, compact = false 
         {items.map((it) => (
           <li key={it.productId} className="flex items-center gap-3 py-3">
             <div className="relative shrink-0">
-              <img src={mediaUrl(it.image, "thumb")} alt="" className="size-14 rounded-xl bg-ink-50 object-cover" />
+              <img src={mediaUrl(it.image, "thumb")} alt="" className="size-14 rounded-xl bg-ink-50 object-contain" />
               <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1 text-[11px] font-bold text-white">{it.qty}</span>
             </div>
             <div className="min-w-0 flex-1">

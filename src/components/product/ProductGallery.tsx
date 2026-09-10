@@ -68,7 +68,7 @@ export function ProductGallery({ images, name, soldOut }: { images: GalleryImage
           tabIndex={multiple ? 0 : -1}
         >
           {list.map((img, i) => (
-            <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden" onMouseMove={onMove} onMouseLeave={() => setZoom(null)} aria-hidden={i !== index}>
+            <div key={i} className="relative aspect-[3/4] w-full shrink-0 snap-center overflow-hidden" onMouseMove={onMove} onMouseLeave={() => setZoom(null)} aria-hidden={i !== index}>
               <img
                 src={mediaUrl(img.path, "large")}
                 alt={img.alt ?? (i === 0 ? name : `${name} — imagen ${i + 1}`)}
@@ -115,7 +115,7 @@ export function ProductGallery({ images, name, soldOut }: { images: GalleryImage
               aria-selected={i === index}
               aria-label={`Ver imagen ${i + 1}`}
               onClick={() => goTo(i)}
-              className={cn("relative size-16 shrink-0 overflow-hidden rounded-xl border-2 bg-ink-50 transition sm:size-20", i === index ? "border-ink" : "border-transparent opacity-70 hover:opacity-100")}
+              className={cn("relative h-20 w-15 shrink-0 overflow-hidden rounded-xl border-2 bg-ink-50 transition sm:h-24 sm:w-18", i === index ? "border-ink" : "border-transparent opacity-70 hover:opacity-100")}
             >
               <img src={mediaUrl(img.path, "thumb")} alt="" loading="lazy" decoding="async" width={img.width || undefined} height={img.height || undefined} className="size-full object-cover" />
             </button>

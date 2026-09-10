@@ -52,7 +52,7 @@ export function CartDrawer() {
               {cart.items.map((it) => (
                 <li key={it.productId} className="flex gap-4 py-4">
                   <Link href={`/producto/${it.slug}`} onClick={cart.close} className="shrink-0">
-                    <img src={mediaUrl(it.image, "thumb")} alt="" className="size-20 rounded-xl bg-ink-50 object-cover" />
+                    <img src={mediaUrl(it.image, "thumb")} alt="" className="size-20 rounded-xl bg-ink-50 object-contain" />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col">
                     <Link href={`/producto/${it.slug}`} onClick={cart.close} className="line-clamp-2 text-sm font-semibold leading-snug hover:underline">

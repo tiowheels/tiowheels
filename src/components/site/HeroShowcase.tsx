@@ -98,7 +98,7 @@ export function HeroShowcase({ products }: { products: HeroProduct[] }) {
               animate={{ opacity: 1, y: 0, rotate: -3, scale: 1 }}
               exit={{ opacity: 0, y: -30, rotate: 4, scale: 0.95, transition: { duration: 0.35 } }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-x-[14%] inset-y-[2%] md:inset-x-[18%]"
+              className="absolute inset-y-[2%] left-1/2 aspect-[3/4] -translate-x-1/2"
             >
               <Link href={`/producto/${slide.product.slug}`} className="group block h-full">
                 <div className="relative h-full overflow-hidden rounded-[1.6rem] bg-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.7)] ring-1 ring-white/20 transition-transform duration-500 group-hover:scale-[1.02]">

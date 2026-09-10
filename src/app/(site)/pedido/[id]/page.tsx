@@ -221,7 +221,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <ul className="mt-3 divide-y divide-ink-100">
                 {order.items.map((it) => (
                   <li key={it.id} className="flex items-center gap-4 py-3">
-                    <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-16 shrink-0 rounded-xl bg-ink-50 object-cover" />
+                    <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-16 shrink-0 rounded-xl bg-ink-50 object-contain" />
                     <div className="min-w-0 flex-1">
                       <div className="line-clamp-2 text-sm font-semibold leading-snug">{it.name}</div>
                       <div className="mt-0.5 text-[13px] text-ink-500">

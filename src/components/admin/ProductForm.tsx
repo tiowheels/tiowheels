@@ -189,7 +189,7 @@ export function ProductForm({ product, brands, categories, duplicated }: { produ
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {product.images.map((img, i) => (
                 <li key={img.id} className="group relative overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
-                  <img src={mediaUrl(img.path, "thumb")} alt="" className="aspect-square w-full object-cover" />
+                  <img src={mediaUrl(img.path, "thumb")} alt="" className="aspect-[3/4] w-full object-cover" />
                   {i === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-ink px-1.5 py-0.5 text-[10px] font-bold text-lime">Principal</span>}
                   <div className="flex items-center justify-between gap-1 bg-white p-1">
                     <button type="button" aria-label="Subir" disabled={i === 0 || imgPending} onClick={() => imgAction(() => moveProductImage({ id: img.id, direction: "up" }))} className="flex size-9 items-center justify-center rounded-lg hover:bg-ink-50 disabled:opacity-30">
@@ -218,7 +218,7 @@ export function ProductForm({ product, brands, categories, duplicated }: { produ
             <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
               {previews.map((p, i) => (
                 <li key={p.url} className="relative overflow-hidden rounded-xl border-2 border-dashed border-lime bg-lime-50">
-                  <img src={p.url} alt="" className="aspect-square w-full object-cover" />
+                  <img src={p.url} alt="" className="aspect-[3/4] w-full object-cover" />
                   <span className="absolute left-1.5 top-1.5 rounded bg-lime px-1.5 py-0.5 text-[10px] font-bold text-ink">Nueva</span>
                   <button type="button" aria-label="Quitar" onClick={() => setPendingFiles((f) => f.filter((_, j) => j !== i))} className="absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-full bg-white/90 text-ink shadow">
                     <X className="size-4" />

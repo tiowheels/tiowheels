@@ -29,7 +29,7 @@ export function RecentSalesTicker({ sales }: { sales: RecentSale[] }) {
         {sales.map((s, i) => {
           const inner = (
             <>
-              <img src={mediaUrl(s.image, "thumb")} alt="" className="size-10 shrink-0 rounded-lg bg-ink-50 object-cover" loading="lazy" />
+              <img src={mediaUrl(s.image, "thumb")} alt="" className="size-10 shrink-0 rounded-lg bg-ink-50 object-contain" loading="lazy" />
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-ink">{s.name}</span>
                 <span className="block text-xs text-ink-500">

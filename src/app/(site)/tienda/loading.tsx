@@ -26,7 +26,7 @@ export default function ShopLoading() {
           <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="card overflow-hidden">
-                <div className="aspect-square animate-pulse bg-ink-50" />
+                <div className="aspect-[3/4] animate-pulse bg-ink-50" />
                 <div className="space-y-2 p-4">
                   <div className="h-2.5 w-14 animate-pulse rounded bg-ink-100" />
                   <div className="h-4 w-4/5 animate-pulse rounded bg-ink-100" />

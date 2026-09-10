@@ -189,7 +189,7 @@ export default async function HomePage() {
               </div>
               <div className="grid grid-cols-4 gap-2 md:gap-3">
                 {sections.premium.slice(0, 8).map((p) => (
-                  <Link key={p.id} href={`/producto/${p.slug}`} className="group aspect-square overflow-hidden rounded-xl bg-white/10">
+                  <Link key={p.id} href={`/producto/${p.slug}`} className="group aspect-[3/4] overflow-hidden rounded-xl bg-white/10">
                     <img src={mediaUrl(p.images[0]?.path, "thumb")} alt={p.name} loading="lazy" className="size-full object-cover transition group-hover:scale-105" />
                   </Link>
                 ))}

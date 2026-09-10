@@ -171,7 +171,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               <li key={p.id} className="card p-3">
                 <div className="flex gap-3">
                   <Link href={`/admin/productos/${p.id}`} className="shrink-0">
-                    <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" className="size-16 rounded-lg bg-ink-50 object-cover" loading="lazy" />
+                    <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" className="size-16 rounded-lg bg-ink-50 object-contain" loading="lazy" />
                   </Link>
                   <div className="min-w-0 flex-1">
                     <Link href={`/admin/productos/${p.id}`} className="line-clamp-2 text-sm font-semibold leading-tight">
@@ -216,7 +216,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   <tr key={p.id} className="transition hover:bg-lime-50/60">
                     <td className="w-16 py-2 pl-4">
                       <Link href={`/admin/productos/${p.id}`}>
-                        <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" className="size-12 rounded-lg bg-ink-50 object-cover" loading="lazy" />
+                        <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" className="size-12 rounded-lg bg-ink-50 object-contain" loading="lazy" />
                       </Link>
                     </td>
                     <td className="px-4 py-2">
