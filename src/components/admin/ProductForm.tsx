@@ -29,7 +29,7 @@ export type ProductFormData = {
 export type CategoryNode = { id: string; name: string; children: { id: string; name: string }[] };
 export type TagOption = { name: string; count: number };
 
-export function ProductForm({ product, brands, categories, tags = [], duplicated }: { product: ProductFormData | null; brands: string[]; categories: CategoryNode[]; tags?: TagOption[]; duplicated?: boolean }) {
+export function ProductForm({ product, categories, tags = [], duplicated }: { product: ProductFormData | null; categories: CategoryNode[]; tags?: TagOption[]; duplicated?: boolean }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -199,6 +199,12 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
             </label>
             <input id="name" name="name" required value={name} onChange={(e) => setName(e.target.value)} enterKeyHint="next" className="input text-base font-semibold" placeholder="Ej: Nissan Skyline GT-R (R34) · Fast & Furious" />
           </div>
+          <div>
+            <label htmlFor="description" className="label">
+              Descripción
+            </label>
+            <textarea id="description" name="description" rows={5} defaultValue={product?.description ?? ""} className="input h-auto min-h-28 resize-y py-2.5" placeholder="Serie, año, color, detalles de la tarjeta, estado del blister…" />
+          </div>
           <details className="rounded-xl bg-ink-50 px-3 py-2">
             <summary className="cursor-pointer text-[13px] font-semibold text-ink-600">Dirección en la web (opcional)</summary>
             <div className="mt-2 flex items-center gap-2">
@@ -237,39 +243,20 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
               <input id="stock" name="stock" type="number" inputMode="numeric" min={0} step={1} required defaultValue={product?.stock ?? 1} className="input font-bold tabular-nums" />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor="brand" className="label">
-                Marca del auto
-              </label>
-              <input id="brand" name="brand" list="brands" defaultValue={product?.brand ?? ""} autoComplete="off" className="input" placeholder="Nissan, Ford, Porsche…" />
-              <datalist id="brands">
-                {brands.map((b) => (
-                  <option key={b} value={b} />
-                ))}
-              </datalist>
-            </div>
-            <div>
-              <label htmlFor="status" className="label">
-                Estado
-              </label>
-              <select id="status" name="status" defaultValue={product?.status ?? "ACTIVE"} className="input">
-                <option value="ACTIVE">Activo (visible en la tienda)</option>
-                <option value="DRAFT">Borrador (oculto)</option>
-                <option value="ARCHIVED">Archivado</option>
-              </select>
-            </div>
+          <div>
+            <label htmlFor="status" className="label">
+              Estado
+            </label>
+            <select id="status" name="status" defaultValue={product?.status ?? "ACTIVE"} className="input">
+              <option value="ACTIVE">Activo (visible en la tienda)</option>
+              <option value="DRAFT">Borrador (oculto)</option>
+              <option value="ARCHIVED">Archivado</option>
+            </select>
           </div>
           <label className="flex h-11 cursor-pointer items-center gap-3 rounded-xl border border-ink-200 px-4 text-sm font-semibold">
             <input type="checkbox" name="featured" defaultChecked={product?.featured ?? false} className="size-5 accent-lime-600" />
             <Star className="size-4 text-lime-700" /> Destacado en la portada
           </label>
-          <div>
-            <label htmlFor="description" className="label">
-              Descripción
-            </label>
-            <textarea id="description" name="description" rows={5} defaultValue={product?.description ?? ""} className="input h-auto min-h-28 resize-y py-2.5" placeholder="Serie, año, color, detalles de la tarjeta, estado del blister…" />
-          </div>
         </section>
 
       </div>

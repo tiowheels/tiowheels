@@ -27,6 +27,29 @@ async function refreshSearchText(productId: string) {
   await db.product.update({ where: { id: productId }, data: { searchText } });
 }
 
+/**
+ * El formulario ya no pide la marca: Cristóbal la escribe en el nombre y la elige como categoría.
+ * Se deduce de la categoría elegida (las hijas de Americanos, Europeos, Japoneses y Camionetas
+ * son marcas de auto) para que el filtro "Marca" de la tienda siga funcionando.
+ */
+const GRUPOS_DE_MARCA = ["americanos", "europeos", "japoneses", "camionetas-y-jeeps"];
+// Nombres de categoría que no coinciden con la marca ya usada en el catálogo
+const ALIAS_DE_MARCA: Record<string, string> = { Mercedes: "Mercedes-Benz", "Ford – Shelby": "Ford" };
+
+async function marcaSegunCategorias(categoryIds: string[], productId: string | null): Promise<string | null> {
+  if (categoryIds.length) {
+    const hijas = await db.category.findMany({
+      where: { id: { in: categoryIds }, parent: { slug: { in: GRUPOS_DE_MARCA } } },
+      select: { name: true },
+      orderBy: { name: "asc" },
+    });
+    if (hijas.length) return ALIAS_DE_MARCA[hijas[0].name] ?? hijas[0].name;
+  }
+  if (!productId) return null;
+  const previo = await db.product.findUnique({ where: { id: productId }, select: { brand: true } });
+  return previo?.brand ?? null;
+}
+
 /* ---------- Edición rápida (lista) ---------- */
 
 const quickSchema = z.object({
@@ -111,6 +134,8 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revisa los datos del formulario" };
   const d = parsed.data;
+  // Si el formulario no manda marca (ya no la pide), se deduce de la categoría
+  const brand = formData.get("brand") !== null ? d.brand || null : await marcaSegunCategorias(d.categoryIds, id);
   const base = slugify(d.slug || d.name);
   const slug = await uniqueSlug(base, id ?? undefined);
   const tagIds = await resolveTags(d.tagNames);
@@ -123,7 +148,7 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
     stock: d.stock,
     status: d.status,
     featured: d.featured,
-    brand: d.brand || null,
+    brand,
     description: d.description || null,
     categories: { set: d.categoryIds.map((cid) => ({ id: cid })) },
     tags: { set: tagIds.map((tid) => ({ id: tid })) },
