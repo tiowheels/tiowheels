@@ -128,6 +128,9 @@ model Product {
   searchText       String        @default("") // texto normalizado (sin tildes, minúsculas) para búsqueda trigram
   legacyId         Int?          @unique
   totalSales       Int           @default(0)
+  /// Fecha que ordena "Productos recientes": se actualiza al crear o editar el producto
+  /// desde el panel (incluye reponer stock), pero NO cuando una compra descuenta stock.
+  listedAt         DateTime      @default(now())
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -137,6 +140,7 @@ model Product {
   orderItems OrderItem[]
 
   @@index([status, stock])
+  @@index([listedAt])
   @@index([brand])
   @@index([createdAt])
   @@index([price])

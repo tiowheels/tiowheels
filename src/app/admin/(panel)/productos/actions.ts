@@ -41,7 +41,8 @@ export async function quickUpdateProduct(input: z.infer<typeof quickSchema>): Pr
   const parsed = quickSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Valor inválido" };
   const { id, ...data } = parsed.data;
-  const p = await db.product.update({ where: { id }, data, select: { slug: true } });
+  // Editar stock o precio a mano cuenta como novedad para la portada
+  const p = await db.product.update({ where: { id }, data: { ...data, listedAt: new Date() }, select: { slug: true } });
   revalidateProduct(id, p.slug);
   return { ok: true };
 }
@@ -114,6 +115,7 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
   const slug = await uniqueSlug(base, id ?? undefined);
   const tagIds = await resolveTags(d.tagNames);
   const data = {
+    listedAt: new Date(), // vuelve a aparecer en "Productos recientes"
     name: d.name,
     slug,
     price: d.price,

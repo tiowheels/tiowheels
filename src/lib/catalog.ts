@@ -98,7 +98,7 @@ function orderSql(orden: SortValue | undefined, q: string | undefined) {
     case "vendidos":
       return Prisma.sql`p."totalSales" DESC, p."createdAt" DESC`;
     default:
-      return Prisma.sql`p."createdAt" DESC`;
+      return Prisma.sql`p."listedAt" DESC`;
   }
 }
 
@@ -192,7 +192,7 @@ export async function getRelatedProducts(productId: string, categoryIds: string[
 export async function getHomeSections() {
   const base = { status: "ACTIVE" as const, stock: { gt: 0 } };
   const [recent, bestSellers, premium, featured, counts] = await Promise.all([
-    db.product.findMany({ where: base, select: productCardSelect, orderBy: { createdAt: "desc" }, take: 12 }),
+    db.product.findMany({ where: base, select: productCardSelect, orderBy: { listedAt: "desc" }, take: 12 }),
     db.product.findMany({ where: base, select: productCardSelect, orderBy: [{ totalSales: "desc" }, { createdAt: "desc" }], take: 12 }),
     db.product.findMany({ where: { ...base, categories: { some: { slug: "hotwheels-premium" } } }, select: productCardSelect, orderBy: { createdAt: "desc" }, take: 8 }),
     db.product.findMany({ where: { ...base, featured: true }, select: productCardSelect, orderBy: { createdAt: "desc" }, take: 8 }),
