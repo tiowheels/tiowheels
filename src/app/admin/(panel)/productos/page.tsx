@@ -141,7 +141,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <option value="">Todas las etiquetas</option>
             {allTags.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name} ({t.count})
+                {t.name} · {t.count} con stock
               </option>
             ))}
           </select>

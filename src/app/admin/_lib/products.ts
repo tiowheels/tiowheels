@@ -14,9 +14,14 @@ export async function getCategoryNodes(): Promise<CategoryNode[]> {
   return sorted.map((r) => ({ id: r.id, name: r.name, children: [...r.children].sort((a, b) => a.name.localeCompare(b.name, "es")).map((c) => ({ id: c.id, name: c.name })) }));
 }
 
-/** Etiquetas existentes (los "lotes" de WooCommerce: Básicos 53, Premium 2…), en orden natural. */
+/**
+ * Etiquetas existentes (los "lotes" de WooCommerce: Básicos 53, Premium 2…), en orden natural.
+ * El conteo es de productos **con stock**, que es lo que interesa al reponer.
+ */
 export async function getTags() {
-  const rows = await db.tag.findMany({ select: { id: true, name: true, _count: { select: { products: true } } } });
+  const rows = await db.tag.findMany({
+    select: { id: true, name: true, _count: { select: { products: { where: { status: "ACTIVE", stock: { gt: 0 } } } } } },
+  });
   return rows
     .sort((a, b) => a.name.localeCompare(b.name, "es", { numeric: true }))
     .map((t) => ({ id: t.id, name: t.name, count: t._count.products }));

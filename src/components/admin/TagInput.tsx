@@ -90,7 +90,7 @@ export function TagInput({ name = "tagNames", initial = [], suggestions = [] }: 
       <datalist id={listId}>
         {restantes.map((s) => (
           <option key={s.name} value={s.name}>
-            {s.count} productos
+            {s.count === 1 ? "1 con stock" : `${s.count} con stock`}
           </option>
         ))}
       </datalist>
@@ -99,7 +99,7 @@ export function TagInput({ name = "tagNames", initial = [], suggestions = [] }: 
         <div className="mt-2 flex flex-wrap gap-1.5">
           {rapidas.map((s) => (
             <button key={s.name} type="button" onClick={() => add(s.name)} className={cn("chip h-7 text-[11px]")}>
-              <Plus className="size-3" /> {s.name}
+              <Plus className="size-3" /> {s.name} <span className="text-ink-400">{s.count}</span>
             </button>
           ))}
         </div>
