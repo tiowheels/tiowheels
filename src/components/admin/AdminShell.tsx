@@ -14,14 +14,14 @@ const MAIN: NavItem[] = [
   { href: "/admin/venta-rapida", label: "Venta rápida", icon: Zap },
   { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/productos", label: "Productos", icon: Package },
-  { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/admin/categorias", label: "Categorías y etiquetas", icon: FolderTree },
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/mensajes", label: "Mensajes", icon: Inbox },
+  { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/admin/ajustes", label: "Ajustes", icon: Settings },
 ];
 
-const MORE_ITEMS = MAIN.filter((i) => ["/admin/categorias", "/admin/clientes", "/admin/mensajes", "/admin/ajustes"].includes(i.href));
+const MORE_ITEMS = MAIN.filter((i) => ["/admin/categorias", "/admin/clientes", "/admin/mensajes", "/admin/reportes", "/admin/ajustes"].includes(i.href));
 
 function useActive() {
   const pathname = usePathname();
