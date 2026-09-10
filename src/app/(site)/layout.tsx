@@ -2,7 +2,7 @@ import { CartProvider } from "@/components/cart/CartProvider";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { WhatsAppFloat } from "@/components/site/WhatsAppFloat";
+import { ChatBot } from "@/components/site/ChatBot";
 import { getCategoryTree } from "@/lib/catalog";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -19,7 +19,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         <Footer categories={categories} />
       </div>
       <CartDrawer />
-      <WhatsAppFloat />
+      <ChatBot />
     </CartProvider>
   );
 }

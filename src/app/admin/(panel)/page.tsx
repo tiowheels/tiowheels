@@ -56,7 +56,7 @@ export default async function AdminHome() {
     }),
     db.order.findMany({ orderBy: { createdAt: "desc" }, take: 8, select: { id: true, number: true, firstName: true, lastName: true, total: true, status: true, channel: true, createdAt: true } }),
     db.$queryRaw<{ day: string; total: number; n: number }[]>`
-      SELECT to_char(("createdAt" AT TIME ZONE 'America/Santiago')::date, 'YYYY-MM-DD') AS day,
+      SELECT to_char(("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Santiago')::date, 'YYYY-MM-DD') AS day,
              coalesce(sum(total), 0)::int AS total, count(*)::int AS n
       FROM "Order"
       WHERE "createdAt" >= ${chartFrom} AND status IN ('PAID','PROCESSING','SHIPPED','COMPLETED')

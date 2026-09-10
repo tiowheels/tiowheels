@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Zap, ClipboardList, Package, FolderTree, Users, Settings, ExternalLink, LogOut, MoreHorizontal, X, Inbox } from "lucide-react";
+import { LayoutDashboard, Zap, ClipboardList, Package, FolderTree, Users, Settings, ExternalLink, LogOut, MoreHorizontal, X, Inbox, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/format";
 import { InstallPwaButton } from "./InstallPwaButton";
 
@@ -14,6 +14,7 @@ const MAIN: NavItem[] = [
   { href: "/admin/venta-rapida", label: "Venta rápida", icon: Zap },
   { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/productos", label: "Productos", icon: Package },
+  { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/admin/categorias", label: "Categorías y etiquetas", icon: FolderTree },
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/mensajes", label: "Mensajes", icon: Inbox },
