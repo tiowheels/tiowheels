@@ -98,3 +98,40 @@ export async function deleteCategory(input: { id: string }): Promise<ActionResul
   revalidate();
   return { ok: true, message: "Categoría eliminada" };
 }
+
+/* ---------- Etiquetas (los "lotes": Básicos 53, Premium 2…) ---------- */
+
+const tagSchema = z.object({ id: z.string().min(1), name: z.string().trim().min(2, "El nombre es muy corto").max(60) });
+
+export async function renameTag(input: z.infer<typeof tagSchema>): Promise<ActionResult> {
+  await requireAdmin();
+  const parsed = tagSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Nombre inválido" };
+  const { id, name } = parsed.data;
+  const slug = slugify(name);
+  const otra = await db.tag.findUnique({ where: { slug }, select: { id: true } });
+  if (otra && otra.id !== id) return { ok: false, error: `Ya existe una etiqueta llamada "${name}"` };
+  await db.tag.update({ where: { id }, data: { name, slug } });
+  revalidate();
+  return { ok: true, message: "Etiqueta renombrada" };
+}
+
+/** Elimina la etiqueta y la quita de todos sus productos. Los productos no se tocan. */
+export async function deleteTag(input: { id: string }): Promise<ActionResult> {
+  await requireAdmin();
+  const t = await db.tag.findUnique({ where: { id: input.id }, select: { name: true, _count: { select: { products: true } } } });
+  if (!t) return { ok: false, error: "Etiqueta no encontrada" };
+  await db.tag.delete({ where: { id: input.id } });
+  revalidate();
+  return { ok: true, message: t._count.products > 0 ? `"${t.name}" eliminada y quitada de ${t._count.products} productos` : `"${t.name}" eliminada` };
+}
+
+/** Borra de una vez las etiquetas que no tienen ningún producto. */
+export async function deleteUnusedTags(): Promise<ActionResult> {
+  await requireAdmin();
+  const vacías = await db.tag.findMany({ where: { products: { none: {} } }, select: { id: true } });
+  if (!vacías.length) return { ok: true, message: "No hay etiquetas sin productos" };
+  await db.tag.deleteMany({ where: { id: { in: vacías.map((t) => t.id) } } });
+  revalidate();
+  return { ok: true, message: `${vacías.length} ${vacías.length === 1 ? "etiqueta eliminada" : "etiquetas eliminadas"}` };
+}

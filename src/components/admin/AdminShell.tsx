@@ -14,7 +14,7 @@ const MAIN: NavItem[] = [
   { href: "/admin/venta-rapida", label: "Venta rápida", icon: Zap },
   { href: "/admin/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/admin/productos", label: "Productos", icon: Package },
-  { href: "/admin/categorias", label: "Categorías", icon: FolderTree },
+  { href: "/admin/categorias", label: "Categorías y etiquetas", icon: FolderTree },
   { href: "/admin/clientes", label: "Clientes", icon: Users },
   { href: "/admin/mensajes", label: "Mensajes", icon: Inbox },
   { href: "/admin/ajustes", label: "Ajustes", icon: Settings },
