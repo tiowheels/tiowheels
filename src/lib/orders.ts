@@ -383,7 +383,7 @@ export function emailButton(href: string, label: string) {
 const EMAIL_EYEBROW = "font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#7a9600;";
 const EMAIL_HELP = `¿Dudas? Escríbenos por WhatsApp al ${esc(SITE.phone)} o a ${esc(SITE.email)}.`;
 
-function orderEmailHtml(order: OrderWithItems, store: StoreSettings, opts: { forStore: boolean }) {
+export function orderEmailHtml(order: OrderWithItems, store: StoreSettings, opts: { forStore: boolean }) {
   const url = `${SITE.url}/pedido/${order.id}`;
   const isPaid = order.paymentStatus === PaymentStatus.PAID;
   const isTransfer = order.paymentMethod === PaymentMethod.TRANSFER;
@@ -465,7 +465,7 @@ function orderEmailHtml(order: OrderWithItems, store: StoreSettings, opts: { for
   return emailShell(title, body);
 }
 
-function orderEmailText(order: OrderWithItems, store: StoreSettings) {
+export function orderEmailText(order: OrderWithItems, store: StoreSettings) {
   const lines = [
     `Pedido #${order.number} · ${formatDateTime(order.createdAt)}`,
     `Estado: ${ORDER_STATUS[order.status].label} · Pago: ${PAYMENT_METHOD_LABEL[order.paymentMethod]}`,
