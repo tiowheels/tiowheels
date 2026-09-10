@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { TagInput } from "./TagInput";
 import Link from "next/link";
-import { Save, Loader2, Trash2, ArrowUp, ArrowDown, Camera, ImagePlus, X, Copy, ExternalLink, Star } from "lucide-react";
-import { cn, slugify } from "@/lib/format";
+import { Save, Loader2, Trash2, ArrowUp, ArrowDown, Camera, ImagePlus, X, Copy, ExternalLink, Star, Search } from "lucide-react";
+import { cn, slugify, normalizeText } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
 import { saveProduct, deleteProductImage, moveProductImage, duplicateProduct, deleteProduct } from "@/app/admin/(panel)/productos/actions";
 
@@ -43,6 +43,25 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
   const slug = slugTouched ? slugState : slugify(name);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set(product?.categoryIds ?? []));
+  const [catQuery, setCatQuery] = useState("");
+  const [zoom, setZoom] = useState<string | null>(null);
+
+  // Las elegidas se muestran arriba como chips, para no perderlas de vista al buscar
+  const catsElegidas = useMemo(() => {
+    const planas = categories.flatMap((r) => [r, ...r.children]);
+    return planas.filter((c) => selectedCats.has(c.id));
+  }, [categories, selectedCats]);
+
+  const catsVisibles = useMemo(() => {
+    const q = normalizeText(catQuery);
+    if (!q) return categories;
+    return categories
+      .map((r) => {
+        const hijas = r.children.filter((c) => normalizeText(c.name).includes(q));
+        return normalizeText(r.name).includes(q) ? r : hijas.length ? { ...r, children: hijas } : null;
+      })
+      .filter((r): r is (typeof categories)[number] => r !== null);
+  }, [categories, catQuery]);
 
   const previews = useMemo(() => pendingFiles.map((f) => ({ file: f, url: URL.createObjectURL(f) })), [pendingFiles]);
   useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews]);
@@ -93,12 +112,85 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="grid gap-4 lg:grid-cols-3">
+      {zoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4" onClick={() => setZoom(null)} role="dialog" aria-label="Foto ampliada">
+          <img src={zoom} alt="" className="max-h-full max-w-full rounded-card object-contain" />
+          <button type="button" aria-label="Cerrar" onClick={() => setZoom(null)} className="absolute right-4 top-4 flex size-11 items-center justify-center rounded-full bg-white text-ink shadow-pop">
+            <X className="size-5" />
+          </button>
+        </div>
+      )}
       {product && <input type="hidden" name="id" value={product.id} />}
       {[...selectedCats].map((id) => (
         <input key={id} type="hidden" name="categoryIds" value={id} />
       ))}
 
       <div className="space-y-4 lg:col-span-2">
+        {/* Fotos: verlas primero ayuda a confirmar que se está describiendo el auto correcto */}
+        <section className="card p-4 md:p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base">Imágenes</h2>
+            {imgPending && <Loader2 className="size-4 animate-spin text-ink-400" />}
+          </div>
+          {product && product.images.length > 0 && (
+            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {product.images.map((img, i) => (
+                <li key={img.id} className="group relative overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
+                  <button type="button" onClick={() => setZoom(mediaUrl(img.path, "large"))} aria-label="Ver la foto en grande" className="block w-full">
+                    <img src={mediaUrl(img.path, "thumb")} alt="" className="aspect-[3/4] w-full object-cover" />
+                  </button>
+                  {i === 0 && <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-ink px-1.5 py-0.5 text-[10px] font-bold text-lime">Principal</span>}
+                  <div className="flex items-center justify-between gap-1 bg-white p-1">
+                    <button type="button" aria-label="Subir" disabled={i === 0 || imgPending} onClick={() => imgAction(() => moveProductImage({ id: img.id, direction: "up" }))} className="flex size-9 items-center justify-center rounded-lg hover:bg-ink-50 disabled:opacity-30">
+                      <ArrowUp className="size-4" />
+                    </button>
+                    <button type="button" aria-label="Bajar" disabled={i === product.images.length - 1 || imgPending} onClick={() => imgAction(() => moveProductImage({ id: img.id, direction: "down" }))} className="flex size-9 items-center justify-center rounded-lg hover:bg-ink-50 disabled:opacity-30">
+                      <ArrowDown className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Eliminar"
+                      disabled={imgPending}
+                      onClick={() => {
+                        if (confirm("¿Eliminar esta imagen?")) imgAction(() => deleteProductImage({ id: img.id }));
+                      }}
+                      className="flex size-9 items-center justify-center rounded-lg text-danger hover:bg-danger/10"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {previews.length > 0 && (
+            <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {previews.map((p, i) => (
+                <li key={p.url} className="relative overflow-hidden rounded-xl border-2 border-dashed border-lime bg-lime-50">
+                  <button type="button" onClick={() => setZoom(p.url)} aria-label="Ver la foto en grande" className="block w-full">
+                    <img src={p.url} alt="" className="aspect-[3/4] w-full object-cover" />
+                  </button>
+                  <span className="pointer-events-none absolute left-1.5 top-1.5 rounded bg-lime px-1.5 py-0.5 text-[10px] font-bold text-ink">Nueva</span>
+                  <button type="button" aria-label="Quitar" onClick={() => setPendingFiles((f) => f.filter((_, j) => j !== i))} className="absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-full bg-white/90 text-ink shadow">
+                    <X className="size-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="btn-outline btn-md cursor-pointer">
+              <ImagePlus className="size-4" /> Elegir fotos
+              <input ref={fileRef} type="file" name="images" accept="image/*" multiple onChange={(e) => addFiles(e.target.files)} className="sr-only" />
+            </label>
+            <label className="btn-outline btn-md cursor-pointer md:hidden">
+              <Camera className="size-4" /> Tomar foto
+              <input type="file" accept="image/*" capture="environment" onChange={(e) => addFiles(e.target.files)} className="sr-only" />
+            </label>
+          </div>
+          <p className="mt-2 text-xs text-ink-400">Toca una foto para verla en grande y confirmar que es el auto correcto. Se guardan en webp en tres tamaños. Las nuevas se agregan al final; usa las flechas para ordenar. La primera es la principal.</p>
+        </section>
+
         {/* Datos básicos */}
         <section className="card space-y-4 p-4 md:p-5">
           <div>
@@ -107,11 +199,9 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
             </label>
             <input id="name" name="name" required value={name} onChange={(e) => setName(e.target.value)} enterKeyHint="next" className="input text-base font-semibold" placeholder="Ej: Nissan Skyline GT-R (R34) · Fast & Furious" />
           </div>
-          <div>
-            <label htmlFor="slug" className="label">
-              URL (slug)
-            </label>
-            <div className="flex items-center gap-2">
+          <details className="rounded-xl bg-ink-50 px-3 py-2">
+            <summary className="cursor-pointer text-[13px] font-semibold text-ink-600">Dirección en la web (opcional)</summary>
+            <div className="mt-2 flex items-center gap-2">
               <span className="hidden text-xs text-ink-400 sm:inline">/producto/</span>
               <input
                 id="slug"
@@ -126,7 +216,7 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
               />
             </div>
             <p className="mt-1 text-xs text-ink-400">Se genera desde el nombre; si ya existe se agrega un número.</p>
-          </div>
+          </details>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
               <label htmlFor="price" className="label">
@@ -182,74 +272,44 @@ export function ProductForm({ product, brands, categories, tags = [], duplicated
           </div>
         </section>
 
-        {/* Imágenes */}
-        <section className="card p-4 md:p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base">Imágenes</h2>
-            {imgPending && <Loader2 className="size-4 animate-spin text-ink-400" />}
-          </div>
-          {product && product.images.length > 0 && (
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {product.images.map((img, i) => (
-                <li key={img.id} className="group relative overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
-                  <img src={mediaUrl(img.path, "thumb")} alt="" className="aspect-[3/4] w-full object-cover" />
-                  {i === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-ink px-1.5 py-0.5 text-[10px] font-bold text-lime">Principal</span>}
-                  <div className="flex items-center justify-between gap-1 bg-white p-1">
-                    <button type="button" aria-label="Subir" disabled={i === 0 || imgPending} onClick={() => imgAction(() => moveProductImage({ id: img.id, direction: "up" }))} className="flex size-9 items-center justify-center rounded-lg hover:bg-ink-50 disabled:opacity-30">
-                      <ArrowUp className="size-4" />
-                    </button>
-                    <button type="button" aria-label="Bajar" disabled={i === product.images.length - 1 || imgPending} onClick={() => imgAction(() => moveProductImage({ id: img.id, direction: "down" }))} className="flex size-9 items-center justify-center rounded-lg hover:bg-ink-50 disabled:opacity-30">
-                      <ArrowDown className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Eliminar"
-                      disabled={imgPending}
-                      onClick={() => {
-                        if (confirm("¿Eliminar esta imagen?")) imgAction(() => deleteProductImage({ id: img.id }));
-                      }}
-                      className="flex size-9 items-center justify-center rounded-lg text-danger hover:bg-danger/10"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-          {previews.length > 0 && (
-            <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {previews.map((p, i) => (
-                <li key={p.url} className="relative overflow-hidden rounded-xl border-2 border-dashed border-lime bg-lime-50">
-                  <img src={p.url} alt="" className="aspect-[3/4] w-full object-cover" />
-                  <span className="absolute left-1.5 top-1.5 rounded bg-lime px-1.5 py-0.5 text-[10px] font-bold text-ink">Nueva</span>
-                  <button type="button" aria-label="Quitar" onClick={() => setPendingFiles((f) => f.filter((_, j) => j !== i))} className="absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-full bg-white/90 text-ink shadow">
-                    <X className="size-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className="btn-outline btn-md cursor-pointer">
-              <ImagePlus className="size-4" /> Elegir fotos
-              <input ref={fileRef} type="file" name="images" accept="image/*" multiple onChange={(e) => addFiles(e.target.files)} className="sr-only" />
-            </label>
-            <label className="btn-outline btn-md cursor-pointer md:hidden">
-              <Camera className="size-4" /> Tomar foto
-              <input type="file" accept="image/*" capture="environment" onChange={(e) => addFiles(e.target.files)} className="sr-only" />
-            </label>
-          </div>
-          <p className="mt-2 text-xs text-ink-400">Se guardan en webp en tres tamaños. Las nuevas se agregan al final; usa las flechas para ordenar. La primera es la principal.</p>
-        </section>
       </div>
 
       <div className="space-y-4">
         {/* Categorías */}
         <section className="card p-4 md:p-5">
-          <h2 className="mb-2 text-base">Categorías</h2>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-base">Categorías</h2>
+            {selectedCats.size > 0 && <span className="text-xs font-semibold text-lime-700">{selectedCats.size === 1 ? "1 elegida" : `${selectedCats.size} elegidas`}</span>}
+          </div>
+
+          {catsElegidas.length > 0 && (
+            <ul className="mb-2 flex flex-wrap gap-1.5">
+              {catsElegidas.map((c) => (
+                <li key={c.id}>
+                  <button type="button" onClick={() => toggleCat(c.id)} className="inline-flex h-7 items-center gap-1 rounded-lg bg-ink px-2 text-[12px] font-bold text-white">
+                    {c.name}
+                    <X className="size-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="relative mb-2">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+            <input
+              type="search"
+              value={catQuery}
+              onChange={(e) => setCatQuery(e.target.value)}
+              placeholder="Buscar categoría…"
+              aria-label="Buscar categoría"
+              className="input h-10 pl-9 text-sm"
+            />
+          </div>
+
           <div className="max-h-96 space-y-1 overflow-y-auto pr-1">
-            {categories.map((root) => (
+            {catsVisibles.length === 0 && <p className="px-2 py-6 text-center text-sm text-ink-500">Ninguna categoría coincide con «{catQuery}».</p>}
+            {catsVisibles.map((root) => (
               <div key={root.id}>
                 <label className="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm font-semibold hover:bg-ink-50">
                   <input type="checkbox" checked={selectedCats.has(root.id)} onChange={() => toggleCat(root.id)} className="size-4 accent-ink" />
