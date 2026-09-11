@@ -20,11 +20,16 @@ const saleSchema = z.object({
       name: z.string().trim().max(120).optional().default(""),
       phone: z.string().trim().max(30).optional().default(""),
       email: z.string().trim().max(160).optional().default(""),
+      rut: z.string().trim().max(20).optional().default(""),
+      address1: z.string().trim().max(200).optional().default(""),
+      region: z.string().trim().max(10).optional().default(""),
+      city: z.string().trim().max(120).optional().default(""),
+      save: z.boolean().optional().default(false),
     })
     .optional()
-    .default({ name: "", phone: "", email: "" }),
+    .default({ name: "", phone: "", email: "", rut: "", address1: "", region: "", city: "", save: false }),
   paymentMethod: z.enum(["CASH", "TRANSFER", "CARD_POS", "OTHER"]),
-  shippingMethod: z.enum(["NONE", "PICKUP"]).default("NONE"),
+  shippingMethod: z.enum(["NONE", "PICKUP", "DELIVERY_COD"]).default("NONE"),
   note: z.string().trim().max(1000).optional().default(""),
   discount: z.number().int().min(0).max(100_000_000).optional().default(0),
 });
@@ -83,8 +88,21 @@ export async function registerManualSale(input: ManualSaleInput): Promise<Manual
       const firstName = nameParts[0] || "Cliente";
       const lastName = nameParts.slice(1).join(" ") || null;
 
-      // Vincula a un usuario existente si el correo coincide
-      const user = emailValid ? await tx.user.findUnique({ where: { email: email! }, select: { id: true } }) : null;
+      // Vincula al cliente por correo; si se pidió guardarlo y no existe, se crea la ficha
+      const datosCliente = {
+        name: firstName,
+        lastName,
+        phone: data.customer.phone || null,
+        rut: data.customer.rut || null,
+        address1: data.customer.address1 || null,
+        city: data.customer.city || null,
+        region: data.customer.region || null,
+      };
+      const user = emailValid
+        ? data.customer.save
+          ? await tx.user.upsert({ where: { email: email! }, create: { email: email!, role: "CUSTOMER", ...datosCliente }, update: datosCliente, select: { id: true } })
+          : await tx.user.findUnique({ where: { email: email! }, select: { id: true } })
+        : null;
 
       const order = await tx.order.create({
         data: {
@@ -101,6 +119,10 @@ export async function registerManualSale(input: ManualSaleInput): Promise<Manual
           lastName,
           email: emailValid ? email : null,
           phone: data.customer.phone || null,
+          rut: data.customer.rut || null,
+          address1: data.customer.address1 || null,
+          city: data.customer.city || null,
+          region: data.customer.region || null,
           shippingMethod: data.shippingMethod,
           adminNote: data.note || null,
           userId: user?.id ?? null,
@@ -120,6 +142,7 @@ export async function registerManualSale(input: ManualSaleInput): Promise<Manual
     revalidatePath("/admin");
     revalidatePath("/admin/pedidos");
     revalidatePath("/admin/productos");
+    revalidatePath("/admin/clientes");
     revalidatePath("/tienda");
     return { ok: true, ...result };
   } catch (e) {

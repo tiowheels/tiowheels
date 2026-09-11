@@ -7,17 +7,18 @@ import { Search, Plus, Minus, Trash2, X, CheckCircle2, Loader2, User, Banknote, 
 import { cn, formatCLP } from "@/lib/format";
 import { registerManualSale, type ManualSaleResult } from "@/app/admin/(panel)/venta-rapida/actions";
 import { whatsappTo } from "./labels";
+import { REGIONS } from "@/lib/chile";
 
 type SearchProduct = { id: string; name: string; price: number; compareAtPrice: number | null; stock: number; brand: string | null; status: string; image: string };
 type Line = { key: string; productId: string; name: string; image: string; listPrice: number; price: number; quantity: number; stock: number };
-type Customer = { name: string; phone: string; email: string };
+type Customer = { name: string; phone: string; email: string; rut: string; address1: string; region: string; city: string; save: boolean };
 type CustomerHit = { id: string; name: string | null; lastName: string | null; email: string; phone: string | null };
 type PaymentMethod = "CASH" | "TRANSFER" | "CARD_POS" | "OTHER";
 
-type Draft = { items: Line[]; customer: Customer; paymentMethod: PaymentMethod; shippingMethod: "NONE" | "PICKUP"; note: string; discount: number };
+type Draft = { items: Line[]; customer: Customer; paymentMethod: PaymentMethod; shippingMethod: "NONE" | "PICKUP" | "DELIVERY_COD"; note: string; discount: number };
 
 const STORAGE_KEY = "tw-admin-ticket-v1";
-const EMPTY: Draft = { items: [], customer: { name: "", phone: "", email: "" }, paymentMethod: "CASH", shippingMethod: "NONE", note: "", discount: 0 };
+const EMPTY: Draft = { items: [], customer: { name: "", phone: "", email: "", rut: "", address1: "", region: "", city: "", save: false }, paymentMethod: "CASH", shippingMethod: "NONE", note: "", discount: 0 };
 
 const PAYMENTS: { value: PaymentMethod; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { value: "CASH", label: "Efectivo", icon: Banknote },
@@ -41,6 +42,7 @@ export function QuickSale() {
   const [open, setOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerHits, setCustomerHits] = useState<CustomerHit[]>([]);
+  const [clienteNuevo, setClienteNuevo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<Extract<ManualSaleResult, { ok: true }> | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -138,7 +140,9 @@ export function QuickSale() {
 
   /* --- clientes --- */
   const customerQuery = draft.customer.name.length >= 2 ? draft.customer.name : draft.customer.email.length >= 3 ? draft.customer.email : "";
-  const visibleHits = customerOpen && customerQuery ? customerHits : [];
+  const visibleHits = customerOpen && customerQuery && !clienteNuevo ? customerHits : [];
+  const comunas = useMemo(() => REGIONS.find((r) => r.code === draft.customer.region)?.comunas ?? [], [draft.customer.region]);
+  const correoValido = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.customer.email.trim());
   useEffect(() => {
     if (!customerOpen || !customerQuery) return;
     const ctrl = new AbortController();
@@ -158,7 +162,8 @@ export function QuickSale() {
   }, [customerQuery, customerOpen]);
 
   function pickCustomer(c: CustomerHit) {
-    update({ customer: { name: [c.name, c.lastName].filter(Boolean).join(" "), phone: c.phone ?? "", email: c.email } });
+    update({ customer: { ...draft.customer, name: [c.name, c.lastName].filter(Boolean).join(" "), phone: c.phone ?? "", email: c.email, save: false } });
+    setClienteNuevo(false);
     setCustomerHits([]);
   }
 
@@ -395,9 +400,20 @@ export function QuickSale() {
           {customerOpen && (
             <div className="space-y-3 border-t border-ink-100 p-4">
               <div className="relative">
-                <input type="text" autoComplete="off" enterKeyHint="next" placeholder="Nombre" value={draft.customer.name} onChange={(e) => update({ customer: { ...draft.customer, name: e.target.value } })} className="input" />
-                {visibleHits.length > 0 && (
-                  <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-xl border border-ink-200 bg-white shadow-pop">
+                <input
+                  type="text"
+                  autoComplete="off"
+                  enterKeyHint="next"
+                  placeholder="Nombre del cliente"
+                  value={draft.customer.name}
+                  onChange={(e) => {
+                    setClienteNuevo(false);
+                    update({ customer: { ...draft.customer, name: e.target.value } });
+                  }}
+                  className="input"
+                />
+                {customerOpen && customerQuery.length >= 2 && !clienteNuevo && (
+                  <ul className="absolute inset-x-0 top-full z-10 mt-1 max-h-60 overflow-y-auto rounded-xl border border-ink-200 bg-white shadow-pop">
                     {visibleHits.map((c) => (
                       <li key={c.id}>
                         <button type="button" onClick={() => pickCustomer(c)} className="flex w-full flex-col px-4 py-2.5 text-left hover:bg-ink-50">
@@ -409,17 +425,62 @@ export function QuickSale() {
                         </button>
                       </li>
                     ))}
+                    <li className="border-t border-ink-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClienteNuevo(true);
+                          update({ customer: { ...draft.customer, save: true } });
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-bold text-lime-700 hover:bg-lime-50"
+                      >
+                        <Plus className="size-4" />
+                        Cliente nuevo: “{draft.customer.name.trim() || draft.customer.email.trim()}”
+                      </button>
+                    </li>
                   </ul>
                 )}
+                {clienteNuevo && <p className="mt-1 text-xs font-semibold text-lime-700">Cliente nuevo. Completa sus datos abajo.</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <input type="tel" inputMode="tel" autoComplete="off" enterKeyHint="next" placeholder="Teléfono" value={draft.customer.phone} onChange={(e) => update({ customer: { ...draft.customer, phone: e.target.value } })} className="input" />
-                <input type="email" inputMode="email" autoComplete="off" autoCapitalize="off" enterKeyHint="done" placeholder="Correo" value={draft.customer.email} onChange={(e) => update({ customer: { ...draft.customer, email: e.target.value } })} className="input" />
+                <input type="email" inputMode="email" autoComplete="off" autoCapitalize="off" enterKeyHint="next" placeholder="Correo" value={draft.customer.email} onChange={(e) => update({ customer: { ...draft.customer, email: e.target.value } })} className="input" />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <input type="text" autoComplete="off" enterKeyHint="next" placeholder="RUT (opcional)" value={draft.customer.rut} onChange={(e) => update({ customer: { ...draft.customer, rut: e.target.value } })} className="input" />
+                <input type="text" autoComplete="off" enterKeyHint="next" placeholder="Dirección" value={draft.customer.address1} onChange={(e) => update({ customer: { ...draft.customer, address1: e.target.value } })} className="input" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <select value={draft.customer.region} onChange={(e) => update({ customer: { ...draft.customer, region: e.target.value, city: "" } })} aria-label="Región" className="input">
+                  <option value="">Región</option>
+                  {REGIONS.map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+                <select value={draft.customer.city} onChange={(e) => update({ customer: { ...draft.customer, city: e.target.value } })} disabled={!comunas.length} aria-label="Comuna" className="input">
+                  <option value="">{comunas.length ? "Comuna" : "Elige la región"}</option>
+                  {comunas.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className={cn("flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border px-3 text-sm font-semibold", draft.customer.save ? "border-ink bg-ink-50" : "border-ink-200")}>
+                <input type="checkbox" checked={draft.customer.save} onChange={(e) => update({ customer: { ...draft.customer, save: e.target.checked } })} className="size-5 accent-lime-600" />
+                Guardar en la ficha de clientes
+              </label>
+              {draft.customer.save && !correoValido && <p className="-mt-1 text-xs text-flame">Para guardarlo necesitamos un correo válido; sin correo la venta igual queda registrada.</p>}
+
               <div className="flex gap-2">
-                {(["NONE", "PICKUP"] as const).map((m) => (
-                  <button key={m} type="button" onClick={() => update({ shippingMethod: m })} className={cn("chip h-10 flex-1 justify-center", draft.shippingMethod === m && "chip-active")}>
-                    {m === "NONE" ? "Entregado en mano" : "Retiro pendiente"}
+                {(["NONE", "PICKUP", "DELIVERY_COD"] as const).map((m) => (
+                  <button key={m} type="button" onClick={() => update({ shippingMethod: m })} className={cn("chip h-10 flex-1 justify-center text-center", draft.shippingMethod === m && "chip-active")}>
+                    {m === "NONE" ? "En mano" : m === "PICKUP" ? "Retiro" : "Envío"}
                   </button>
                 ))}
               </div>
