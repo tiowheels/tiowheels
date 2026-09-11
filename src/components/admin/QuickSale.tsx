@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Minus, Trash2, X, CheckCircle2, Loader2, User, Banknote, Landmark, CreditCard, MoreHorizontal, MessageCircle, Zap, Package } from "lucide-react";
+import { Search, Plus, Minus, Trash2, X, CheckCircle2, Loader2, User, Banknote, Landmark, CreditCard, MoreHorizontal, MessageCircle, Zap, Package, ChevronDown } from "lucide-react";
 import { cn, formatCLP } from "@/lib/format";
 import { registerManualSale, type ManualSaleResult } from "@/app/admin/(panel)/venta-rapida/actions";
 import { whatsappTo } from "./labels";
@@ -43,6 +43,7 @@ export function QuickSale() {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerHits, setCustomerHits] = useState<CustomerHit[]>([]);
   const [clienteNuevo, setClienteNuevo] = useState(false);
+  const [clienteTocado, setClienteTocado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<Extract<ManualSaleResult, { ok: true }> | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -128,6 +129,7 @@ export function QuickSale() {
     showToast(`Agregado: ${p.name}`);
     setQuery("");
     setResults([]);
+    setOpen(false);
     searchRef.current?.focus();
   }
 
@@ -137,6 +139,11 @@ export function QuickSale() {
   function removeLine(key: string) {
     update((d) => ({ ...d, items: d.items.filter((l) => l.key !== key) }));
   }
+
+  // Con el ticket empezado se abren los datos del cliente: si no, la comuna y el envío pasan desapercibidos
+  useEffect(() => {
+    if (draft.items.length > 0 && !clienteTocado) setCustomerOpen(true);
+  }, [draft.items.length, clienteTocado]);
 
   /* --- clientes --- */
   const customerQuery = draft.customer.name.length >= 2 ? draft.customer.name : draft.customer.email.length >= 3 ? draft.customer.email : "";
@@ -256,7 +263,9 @@ export function QuickSale() {
               spellCheck={false}
               placeholder="Buscar producto (nombre, marca…)"
               value={query}
-              onFocus={() => setOpen(true)}
+              onFocus={() => {
+                if (query.trim() || draft.items.length === 0) setOpen(true);
+              }}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setOpen(true);
@@ -391,11 +400,25 @@ export function QuickSale() {
 
         {/* Cliente */}
         <div className="card overflow-hidden">
-          <button type="button" onClick={() => setCustomerOpen((v) => !v)} className="flex h-13 w-full items-center justify-between px-4 text-left">
-            <span className="flex items-center gap-2 text-sm font-bold">
-              <User className="size-4" /> Cliente <span className="font-normal text-ink-400">(opcional)</span>
+          <button
+            type="button"
+            onClick={() => {
+              setClienteTocado(true);
+              setCustomerOpen((v) => !v);
+            }}
+            aria-expanded={customerOpen}
+            className="flex min-h-14 w-full items-center justify-between gap-2 px-4 py-2 text-left"
+          >
+            <span className="min-w-0">
+              <span className="flex items-center gap-2 text-sm font-bold">
+                <User className="size-4" /> Cliente y envío <span className="font-normal text-ink-400">(opcional)</span>
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-ink-500">{draft.customer.name || draft.customer.phone || "Nombre, teléfono, dirección, comuna y tipo de entrega"}</span>
             </span>
-            <span className="max-w-[45%] truncate text-xs text-ink-500">{draft.customer.name || draft.customer.phone || (customerOpen ? "Ocultar" : "Agregar")}</span>
+            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-lime-700">
+              {customerOpen ? "Ocultar" : "Agregar"}
+              <ChevronDown className={cn("size-4 transition", customerOpen && "rotate-180")} />
+            </span>
           </button>
           {customerOpen && (
             <div className="space-y-3 border-t border-ink-100 p-4">
