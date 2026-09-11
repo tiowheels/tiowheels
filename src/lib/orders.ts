@@ -287,6 +287,47 @@ export async function cancelOrderAndRestock(orderId: string): Promise<{ order: O
 }
 
 /* ------------------------------------------------------------------ */
+/* Caducidad de pedidos sin pagar                                      */
+/* ------------------------------------------------------------------ */
+
+/** Minutos que un pedido web puede esperar el pago antes de liberar el stock. */
+export const MINUTOS_PARA_PAGAR = Math.max(5, Number(process.env.ORDER_EXPIRY_MINUTES ?? 60) || 60);
+
+let ultimaRevision = 0;
+
+/**
+ * Cancela los pedidos web que llevan más de una hora sin pagar y devuelve su stock.
+ * Si no se libera, los autos quedan tomados y nadie más puede comprarlos.
+ * Es idempotente y seguro de llamar seguido: se ejecuta como mucho cada 2 minutos.
+ */
+export async function expirarPedidosSinPago(opts: { forzar?: boolean } = {}): Promise<{ revisados: number; cancelados: number[] }> {
+  const ahora = Date.now();
+  if (!opts.forzar && ahora - ultimaRevision < 2 * 60 * 1000) return { revisados: 0, cancelados: [] };
+  ultimaRevision = ahora;
+
+  const limite = new Date(ahora - MINUTOS_PARA_PAGAR * 60 * 1000);
+  const vencidos = await db.order.findMany({
+    where: { channel: OrderChannel.WEB, status: OrderStatus.PENDING, paymentStatus: PaymentStatus.UNPAID, createdAt: { lt: limite } },
+    select: { id: true, number: true, adminNote: true },
+    take: 200,
+  });
+  const cancelados: number[] = [];
+  for (const o of vencidos) {
+    try {
+      const { changed } = await cancelOrderAndRestock(o.id);
+      if (!changed) continue;
+      const aviso = `Cancelado automáticamente: pasaron más de ${MINUTOS_PARA_PAGAR} minutos sin pago y se liberó el stock.`;
+      await db.order.update({ where: { id: o.id }, data: { adminNote: o.adminNote ? `${o.adminNote}\n${aviso}` : aviso } });
+      cancelados.push(o.number);
+    } catch (err) {
+      console.error("[orders] no se pudo caducar el pedido", o.number, err);
+    }
+  }
+  if (cancelados.length) console.info("[orders] pedidos caducados:", cancelados.join(", "));
+  return { revisados: vencidos.length, cancelados };
+}
+
+/* ------------------------------------------------------------------ */
 /* Flow: sincronizar estado de un pago por token                       */
 /* ------------------------------------------------------------------ */
 

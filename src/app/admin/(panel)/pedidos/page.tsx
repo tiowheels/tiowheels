@@ -10,15 +10,16 @@ import { OrderStatusBadge, ChannelBadge, PaymentStatusBadge } from "@/components
 import { PageHeader, EmptyState } from "@/components/admin/PageHeader";
 import { Pagination } from "@/components/admin/Pagination";
 import { FilterForm, CollapsibleFilters } from "@/components/admin/FilterForm";
-
+import { after } from "next/server";
+import { expirarPedidosSinPago } from "@/lib/orders";
 export const metadata: Metadata = { title: "Pedidos" };
 export const dynamic = "force-dynamic";
-
 const PER_PAGE = 30;
 type SP = Record<string, string | string[] | undefined>;
 const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
-
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<SP> }) {
+  // Libera el stock de los pedidos que quedaron sin pagar
+  after(() => expirarPedidosSinPago());
   const sp = await searchParams;
   const q = str(sp.q).trim();
   const estado = str(sp.estado);
@@ -26,7 +27,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   const desde = str(sp.desde);
   const hasta = str(sp.hasta);
   const page = Math.max(1, parseInt(str(sp.page) || "1", 10) || 1);
-
   const where: Prisma.OrderWhereInput = {};
   if (estado && estado in ORDER_STATUS) where.status = estado as OrderStatus;
   if (canal && canal in ORDER_CHANNEL) where.channel = canal as OrderChannel;
@@ -45,7 +45,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       { phone: { contains: q } },
     ];
   }
-
   const [orders, total] = await Promise.all([
     db.order.findMany({
       where,
@@ -59,7 +58,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   const params = { q, estado, canal, desde, hasta };
   const hasFilters = Boolean(q || estado || canal || desde || hasta);
-
   return (
     <>
       <PageHeader title="Pedidos" description={`${total.toLocaleString("es-CL")} ${total === 1 ? "pedido" : "pedidos"}${hasFilters ? " con estos filtros" : ""}`}>
@@ -67,7 +65,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           <Zap className="size-4" /> Venta rápida
         </Link>
       </PageHeader>
-
       <FilterForm action="/admin/pedidos" className="card mb-4 space-y-2 p-3">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
@@ -99,7 +96,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           </Link>
         )}
       </FilterForm>
-
       {orders.length === 0 ? (
         <EmptyState title="No hay pedidos" text={hasFilters ? "Prueba con otros filtros o limpia la búsqueda." : "Cuando registres una venta o entre un pedido web aparecerá aquí."}>
           {hasFilters && (
@@ -135,7 +131,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
               </li>
             ))}
           </ul>
-
           {/* Escritorio: tabla */}
           <div className="card hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
@@ -192,7 +187,6 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     </>
   );
 }
-
 /** Icono que indica que el pedido tiene código de seguimiento. */
 function TrackingBadge({ carrier, code }: { carrier: string | null; code: string }) {
   return (

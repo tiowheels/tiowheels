@@ -19,9 +19,9 @@ import { RecentlyViewed } from "@/components/product/RecentlyViewed";
 import { ProductViewEvent } from "@/components/analytics/ProductViewEvent";
 import { safeJsonLd } from "@/lib/seo";
 import { collectionOf } from "@/lib/collections";
-
+import { after } from "next/server";
+import { expirarPedidosSinPago } from "@/lib/orders";
 type Params = Promise<{ slug: string }>;
-
 function describe(p: { name: string; brand: string | null; shortDescription: string | null; description: string | null }) {
   const own = p.shortDescription || p.description;
   if (own) {
@@ -30,7 +30,6 @@ function describe(p: { name: string; brand: string | null; shortDescription: str
   }
   return `${p.name}${p.brand ? ` (${p.brand})` : ""} a escala 1:64. Compra en Tío Wheels con envío a todo Chile, pago seguro y atención por WhatsApp.`;
 }
-
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const p = await getProductBySlug(slug);
@@ -49,12 +48,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     },
   };
 }
-
 export default async function ProductPage({ params }: { params: Params }) {
+  // Libera el stock de los pedidos que quedaron sin pagar
+  after(() => expirarPedidosSinPago());
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product || product.status !== "ACTIVE") notFound();
-
   const soldOut = product.stock <= 0;
   const mainCategory = product.categories.find((c) => !c.parentId) ?? product.categories[0] ?? null;
   const subCategory = product.categories.find((c) => c.parentId && c.id !== mainCategory?.id) ?? null;
@@ -63,7 +62,6 @@ export default async function ProductPage({ params }: { params: Params }) {
   const shortDescription = product.shortDescription ? stripHtml(product.shortDescription) : "";
   const paragraphs = description.split(/\n{2,}|(?<=\.)\s{2,}/).map((s) => s.trim()).filter(Boolean);
   const collection = collectionOf(product.categories);
-
   const stockBadge = soldOut ? (
     <Badge tone="dark">Agotado</Badge>
   ) : product.stock === 1 ? (
@@ -73,7 +71,6 @@ export default async function ProductPage({ params }: { params: Params }) {
   ) : (
     <Badge tone="success">Disponible</Badge>
   );
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -104,13 +101,11 @@ export default async function ProductPage({ params }: { params: Params }) {
       { "@type": "ListItem", position: mainCategory ? 4 : 3, name: product.name, item: url },
     ],
   };
-
   return (
     <div className="container-x pb-24 pt-4 md:pb-16 md:pt-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
       <ProductViewEvent product={{ id: product.id, name: product.name, price: product.price, brand: product.brand, category: mainCategory?.name ?? null }} />
-
       <Breadcrumbs
         items={[
           { label: "Inicio", href: "/" },
@@ -120,13 +115,11 @@ export default async function ProductPage({ params }: { params: Params }) {
           { label: product.name },
         ]}
       />
-
       <div className="mt-4 grid gap-8 md:mt-6 md:grid-cols-2 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
         {/* Galería */}
         <div className="md:sticky md:top-[100px] md:self-start">
           <ProductGallery images={product.images.map((i) => ({ path: i.path, alt: i.alt, width: i.width, height: i.height }))} name={product.name} soldOut={soldOut} />
         </div>
-
         {/* Info */}
         <div className="flex flex-col">
           <div className="flex items-center justify-between gap-3">
@@ -140,21 +133,18 @@ export default async function ProductPage({ params }: { params: Params }) {
             <ShareButton url={url} title={product.name} text={`Mira este ${product.brand ?? "auto"} en Tío Wheels`} />
           </div>
           <h1 className="mt-2 text-2xl leading-tight sm:text-3xl lg:text-4xl">{product.name}</h1>
-
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Price amount={product.price} compareAt={product.compareAtPrice} size="lg" className="text-3xl sm:text-4xl" />
             {soldOut ? stockBadge : null}
             {product.compareAtPrice && product.compareAtPrice > product.price ? <Badge tone="lime">-{Math.round((1 - product.price / product.compareAtPrice) * 100)}%</Badge> : null}
           </div>
           {shortDescription ? <p className="mt-3 text-ink-500">{shortDescription}</p> : null}
-
           <div className="mt-6">
             <AddToCart
               product={{ id: product.id, slug: product.slug, name: product.name, price: product.price, compareAtPrice: product.compareAtPrice, stock: product.stock, image: product.images[0]?.path ?? null }}
               relatedAnchor="relacionados"
             />
           </div>
-
           <a
             href={whatsappLink(`Hola Tío Wheels, quiero consultar por "${product.name}" ${url}`)}
             target="_blank"
@@ -163,7 +153,6 @@ export default async function ProductPage({ params }: { params: Params }) {
           >
             <WhatsAppIcon className="size-5 text-[#25D366]" /> Consultar por WhatsApp
           </a>
-
           {/* Confianza */}
           <ul className="mt-6 grid gap-3 rounded-card bg-ink-50 p-4 text-sm sm:grid-cols-3 sm:p-5">
             <li className="flex gap-3 sm:flex-col sm:gap-2">
@@ -188,7 +177,6 @@ export default async function ProductPage({ params }: { params: Params }) {
               </div>
             </li>
           </ul>
-
           {/* Categorías */}
           {product.categories.length ? (
             <div className="mt-6">
@@ -204,7 +192,6 @@ export default async function ProductPage({ params }: { params: Params }) {
               </div>
             </div>
           ) : null}
-
           {/* Descripción */}
           {paragraphs.length ? (
             <section className="mt-8 border-t border-ink-100 pt-6" aria-labelledby="desc-title">
@@ -218,7 +205,6 @@ export default async function ProductPage({ params }: { params: Params }) {
               </div>
             </section>
           ) : null}
-
           {/* Ficha técnica */}
           <section className="mt-8 border-t border-ink-100 pt-6" aria-labelledby="specs-title">
             <h2 id="specs-title" className="flex items-center gap-2 text-lg">
@@ -234,16 +220,13 @@ export default async function ProductPage({ params }: { params: Params }) {
           </section>
         </div>
       </div>
-
       <Suspense fallback={<RelatedSkeleton />}>
         <Related productId={product.id} categoryIds={product.categories.map((c) => c.id)} brand={product.brand} soldOut={soldOut} mainCategory={mainCategory} />
       </Suspense>
-
       <RecentlyViewed currentId={product.id} className="mt-16 md:mt-20" />
     </div>
   );
 }
-
 async function Related({ productId, categoryIds, brand, soldOut, mainCategory }: { productId: string; categoryIds: string[]; brand: string | null; soldOut: boolean; mainCategory: { slug: string; name: string } | null }) {
   const related = await getRelatedProducts(productId, categoryIds, brand, 8);
   if (!related.length) return null;
@@ -266,7 +249,6 @@ async function Related({ productId, categoryIds, brand, soldOut, mainCategory }:
     </section>
   );
 }
-
 function RelatedSkeleton() {
   return (
     <div className="mt-16 md:mt-20" aria-hidden>
@@ -286,7 +268,6 @@ function RelatedSkeleton() {
     </div>
   );
 }
-
 function Spec({ label, value, href, mono, icon: Icon, className }: { label: string; value: string; href?: string; mono?: boolean; icon?: React.ComponentType<{ className?: string }>; className?: string }) {
   return (
     <div className={`bg-white px-4 py-3 ${className ?? ""}`}>

@@ -9,12 +9,11 @@ import { OrderStatusBadge, ChannelBadge } from "@/components/admin/StatusBadge";
 import { InstallPwaButton } from "@/components/admin/InstallPwaButton";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { PendingOrderActions } from "@/components/admin/PendingOrderActions";
-
+import { after } from "next/server";
+import { expirarPedidosSinPago } from "@/lib/orders";
 export const metadata: Metadata = { title: "Inicio" };
 export const dynamic = "force-dynamic";
-
 const SALE_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "COMPLETED"] as const;
-
 async function kpi(from: Date, to?: Date) {
   const rows = await db.order.groupBy({
     by: ["channel"],
@@ -30,14 +29,14 @@ async function kpi(from: Date, to?: Date) {
   const manual = pick(["MANUAL", "LEGACY_APP"]);
   return { web, manual, all: { total: web.total + manual.total, count: web.count + manual.count } };
 }
-
 export default async function AdminHome() {
+  // Libera el stock de los pedidos que quedaron sin pagar
+  after(() => expirarPedidosSinPago());
   const now = new Date();
   const today = startOfDaySantiago(now);
   const week = addDays(today, -6);
   const month = startOfMonthSantiago(now);
   const chartFrom = addDays(today, -13);
-
   const [kToday, kWeek, kMonth, pending, lowStock, latest, daily, counts, unreadMessages] = await Promise.all([
     kpi(today),
     kpi(week),
@@ -64,7 +63,6 @@ export default async function AdminHome() {
     Promise.all([db.product.count({ where: { status: "ACTIVE", stock: { gt: 0 } } }), db.product.count({ where: { stock: 1, status: "ACTIVE" } }), db.order.count({ where: { status: "PENDING" } })]),
     db.contactMessage.count({ where: { read: false } }),
   ]);
-
   const byDay = new Map(daily.map((d) => [d.day, d]));
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = addDays(chartFrom, i);
@@ -73,7 +71,6 @@ export default async function AdminHome() {
     return { date: d, key, total: row?.total ?? 0, n: row?.n ?? 0 };
   });
   const maxTotal = Math.max(1, ...days.map((d) => d.total));
-
   return (
     <>
       <PageHeader title="Hola, Tío" description={`${counts[0].toLocaleString("es-CL")} productos con stock · ${counts[1]} con 1 unidad · ${counts[2]} pendientes de pago`}>
@@ -81,7 +78,6 @@ export default async function AdminHome() {
           <Zap className="size-5" /> Venta rápida
         </Link>
       </PageHeader>
-
       {/* Venta rápida destacada en móvil */}
       <Link href="/admin/venta-rapida" className="mb-4 flex items-center justify-between rounded-card bg-ink p-4 text-white shadow-card md:hidden">
         <div className="flex items-center gap-3">
@@ -95,9 +91,7 @@ export default async function AdminHome() {
         </div>
         <ArrowRight className="size-5 text-lime" />
       </Link>
-
       <InstallPwaButton asCard className="mt-3" />
-
       {/* Mensajes sin leer */}
       {unreadMessages > 0 && (
         <Link href="/admin/mensajes?filtro=no-leidos" className="card mb-4 flex items-center justify-between gap-3 border-l-4 border-lime p-4 transition hover:shadow-pop">
@@ -115,14 +109,12 @@ export default async function AdminHome() {
           <ArrowRight className="size-5 shrink-0 text-ink-400" />
         </Link>
       )}
-
       {/* KPIs */}
       <section className="grid gap-3 sm:grid-cols-3">
         <KpiCard title="Hoy" data={kToday} highlight />
         <KpiCard title="Últimos 7 días" data={kWeek} />
         <KpiCard title="Este mes" data={kMonth} />
       </section>
-
       {/* Gráfico 14 días */}
       <section className="card mt-4 p-4 md:p-6">
         <div className="mb-4 flex items-baseline justify-between">
@@ -152,7 +144,6 @@ export default async function AdminHome() {
           ))}
         </div>
       </section>
-
       <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
         {/* Pendientes */}
         <section className="card min-w-0 p-4 md:p-6">
@@ -186,7 +177,6 @@ export default async function AdminHome() {
             </ul>
           )}
         </section>
-
         {/* Stock 1 */}
         <section className="card min-w-0 p-4 md:p-6">
           <div className="mb-3 flex items-center justify-between">
@@ -217,7 +207,6 @@ export default async function AdminHome() {
           )}
         </section>
       </div>
-
       {/* Últimos pedidos */}
       <section className="card mt-4 p-4 md:p-6">
         <div className="mb-3 flex items-center justify-between">
@@ -247,7 +236,6 @@ export default async function AdminHome() {
     </>
   );
 }
-
 function KpiCard({ title, data, highlight }: { title: string; data: Awaited<ReturnType<typeof kpi>>; highlight?: boolean }) {
   return (
     <div className={cn("card p-4 md:p-5", highlight && "bg-ink text-white")}>

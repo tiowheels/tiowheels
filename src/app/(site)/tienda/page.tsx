@@ -11,15 +11,14 @@ import { SubcategoryChips } from "@/components/shop/SubcategoryChips";
 import { EmptyState } from "@/components/shop/EmptyState";
 import type { ShopCategoryNode } from "@/components/shop/types";
 import type { ShopQuery } from "@/lib/shop-url";
-
+import { after } from "next/server";
+import { expirarPedidosSinPago } from "@/lib/orders";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
 function titleFor(filters: ShopQuery, catName: string | null) {
   if (filters.q) return `Resultados para “${filters.q}”`;
   if (filters.cat) return catName ?? "Categoría";
   return "Tienda";
 }
-
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const filters = parseFilters(await searchParams);
   const cat = filters.cat ? await getCategoryBySlug(filters.cat) : null;
@@ -34,18 +33,17 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
     alternates: filters.cat && !filters.q ? { canonical: `/tienda?cat=${filters.cat}` } : { canonical: "/tienda" },
   };
 }
-
 export default async function ShopPage({ searchParams }: { searchParams: SearchParams }) {
+  // Libera el stock de los pedidos que quedaron sin pagar
+  after(() => expirarPedidosSinPago());
   const filters = parseFilters(await searchParams);
   const [result, rawTree, category] = await Promise.all([searchProducts(filters), getCategoryTree(), filters.cat ? getCategoryBySlug(filters.cat) : null]);
-
   const tree: ShopCategoryNode[] = rawTree.map((r) => ({
     slug: r.slug,
     name: r.name,
     count: r.count,
     children: r.children.map((c) => ({ slug: c.slug, name: c.name, count: c.count, children: [] })),
   }));
-
   // Nodo actual y su padre (para chips de subcategorías).
   let current: ShopCategoryNode | null = null;
   let parent: ShopCategoryNode | null = null;
@@ -59,16 +57,13 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
       }
     }
   }
-
   const catName = category?.name ?? current?.name ?? null;
   const title = titleFor(filters, catName);
   const { items, total, page, pages, facets } = result;
   const from = total ? (page - 1) * result.perPage + 1 : 0;
   const to = Math.min(total, page * result.perPage);
-
   const hasActiveFilters = Boolean(filters.q || filters.cat || filters.min != null || filters.max != null || filters.agotados);
   const panelProps = { filters, tree, priceMin: facets.priceMin, priceMax: facets.priceMax, sortOptions: SORT_OPTIONS };
-
   return (
     <div className="pb-16">
       {/* Filtros activos (la búsqueda vive en el header) */}
@@ -79,7 +74,6 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
           </div>
         </section>
       ) : null}
-
       <div className="container-x mt-6 grid gap-8 lg:mt-10 lg:grid-cols-[264px_minmax(0,1fr)] lg:gap-10">
         {/* Sidebar desktop */}
         <aside className="hidden lg:block" aria-label="Filtros">
@@ -87,7 +81,6 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
             <FilterPanel {...panelProps} idPrefix="d" />
           </div>
         </aside>
-
         {/* Resultados */}
         <section className="min-w-0" aria-labelledby="shop-title">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -113,13 +106,11 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
               </div>
             </div>
           </div>
-
           {current ? (
             <div className="mt-5">
               <SubcategoryChips filters={filters} current={current} parent={parent} />
             </div>
           ) : null}
-
           <div className="mt-6">
             {items.length ? (
               <>
