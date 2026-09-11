@@ -2,6 +2,11 @@
 import nodemailer from "nodemailer";
 import { SITE } from "./site";
 
+/** Resend: envío por HTTPS, sin depender de los puertos de correo ni del hosting antiguo. */
+function resendConfigured() {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
 /** Relevo por HTTPS en el hosting (correo.php): se usa cuando los puertos de correo están bloqueados. */
 function relayConfigured() {
   return Boolean(process.env.MAIL_RELAY_URL && process.env.MAIL_RELAY_SECRET);
@@ -12,10 +17,34 @@ function smtpConfigured() {
 }
 
 export function mailConfigured() {
-  return relayConfigured() || smtpConfigured();
+  return resendConfigured() || relayConfigured() || smtpConfigured();
+}
+
+function remitente() {
+  return process.env.SMTP_FROM || `${SITE.name} <info@tiowheels.cl>`;
 }
 
 type Correo = { to: string; subject: string; html: string; text?: string };
+
+async function enviarPorResend(opts: Correo) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: remitente(),
+      to: [opts.to],
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
+      reply_to: process.env.SMTP_REPLY_TO || SITE.email,
+    }),
+    cache: "no-store",
+  });
+  if (!r.ok) {
+    const detalle = (await r.json().catch(() => ({}))) as { message?: string };
+    throw new Error(detalle.message ?? `HTTP ${r.status}`);
+  }
+}
 
 /** Envía a través de correo.php, que despacha desde el propio servidor del dominio. */
 async function enviarPorRelay(opts: Correo) {
@@ -56,6 +85,21 @@ function transport() {
 
 /** Comprueba de verdad la conexión con el servidor de correo (para el panel de ajustes). */
 export async function mailStatus(): Promise<{ ok: boolean; detail: string }> {
+  if (resendConfigured()) {
+    try {
+      const r = await fetch("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` }, cache: "no-store" });
+      const cuerpo = (await r.json().catch(() => ({}))) as { data?: { name: string; status: string }[]; message?: string };
+      if (!r.ok) return { ok: false, detail: `Resend respondió ${r.status}: ${cuerpo.message ?? "clave rechazada"}` };
+      const dominios = cuerpo.data ?? [];
+      const verificado = dominios.find((d) => d.status === "verified");
+      if (!dominios.length) return { ok: false, detail: "Resend conectado, pero falta verificar el dominio tiowheels.cl" };
+      return verificado
+        ? { ok: true, detail: `Resend con ${verificado.name} verificado, envía desde ${remitente()}` }
+        : { ok: false, detail: `Resend conectado, pero ${dominios[0].name} está en estado ${dominios[0].status}` };
+    } catch (err) {
+      return { ok: false, detail: `No se pudo hablar con Resend: ${err instanceof Error ? err.message : String(err)}` };
+    }
+  }
   if (relayConfigured()) {
     const url = process.env.MAIL_RELAY_URL!;
     try {
@@ -88,6 +132,15 @@ export async function sendMail(opts: Correo) {
     console.info(`[mail] sin correo configurado. Omitido → ${opts.to}: ${opts.subject}`);
     return { skipped: true as const };
   }
+  if (resendConfigured()) {
+    try {
+      await enviarPorResend(opts);
+      return { skipped: false as const };
+    } catch (err) {
+      console.error("[mail] Resend falló", err);
+      if (!relayConfigured() && !smtpConfigured()) return { skipped: false as const, error: String(err) };
+    }
+  }
   if (relayConfigured()) {
     try {
       await enviarPorRelay(opts);
@@ -100,7 +153,7 @@ export async function sendMail(opts: Correo) {
   }
   try {
     await transport().sendMail({
-      from: process.env.SMTP_FROM || `${SITE.name} <info@tiowheels.cl>`,
+      from: remitente(),
       // Las respuestas de los clientes llegan a la casilla de atención, no a la de envío
       replyTo: process.env.SMTP_REPLY_TO || SITE.email,
       ...opts,

@@ -38,6 +38,18 @@ Respuesta esperada:
 {"ok":true,"listo":true,"remitente":"info@tiowheels.cl","php":"8.2.x"}
 ```
 
+## Si algún día se apaga el hosting antiguo
+
+La tienda también sabe enviar por **Resend**, que no depende del hosting ni de los
+puertos de correo. Se activa con una sola variable en Railway:
+
+| Variable | Valor |
+|---|---|
+| `RESEND_API_KEY` | la clave que entrega resend.com |
+
+Hay que verificar el dominio `tiowheels.cl` en Resend agregando los registros que
+ellos indican. Con la clave puesta, Resend manda y el relevo PHP queda de respaldo.
+
 ## Detalles
 
 - Los correos salen desde `info@tiowheels.cl` y las respuestas van a `contacto@tiowheels.cl`.
