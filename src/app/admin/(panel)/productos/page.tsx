@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Plus, Star, Download, Upload } from "lucide-react";
+import { Search, Plus, Star, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatCLP, normalizeText, cn } from "@/lib/format";
@@ -118,8 +118,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader title="Productos" description={`${total.toLocaleString("es-CL")} ${total === 1 ? "producto" : "productos"}`}>
+        <a href={`/admin/api/productos/export?${new URLSearchParams({ q, disp, cat, etiqueta, estado, formato: "excel" }).toString()}`} className="btn-outline btn-md" title="Descarga la planilla de Excel con los filtros aplicados">
+          <FileSpreadsheet className="size-4" /> <span className="hidden sm:inline">Excel</span>
+        </a>
         <a href={`/admin/api/productos/export?${new URLSearchParams({ q, disp, cat, etiqueta, estado }).toString()}`} className="btn-outline btn-md" title="Descarga el CSV con los filtros aplicados">
-          <Download className="size-4" /> <span className="hidden sm:inline">Exportar</span>
+          <Download className="size-4" /> <span className="hidden sm:inline">CSV</span>
         </a>
         <Link href="/admin/productos/importar" className="btn-outline btn-md">
           <Upload className="size-4" /> <span className="hidden sm:inline">Importar</span>

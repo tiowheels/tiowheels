@@ -5,14 +5,19 @@ import { getCurrentUser } from "@/lib/auth";
 import { normalizeText } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
 import { toCsv } from "@/lib/csv";
+import ExcelJS from "exceljs";
 
 export const dynamic = "force-dynamic";
 
 export const CSV_HEADERS = ["codigo", "nombre", "slug", "marca", "precio", "precio_anterior", "stock", "estado", "destacado", "descripcion", "categorias", "etiquetas", "vendidos", "imagenes"] as const;
 
+/** Encabezados en bonito para la planilla de Excel. */
+const TITULOS = ["Código", "Nombre", "Dirección web", "Marca", "Precio", "Precio anterior", "Stock", "Estado", "Destacado", "Descripción", "Categorías", "Etiquetas", "Vendidos", "Imágenes"] as const;
+
 /**
- * Exporta el catálogo a CSV respetando los filtros de la lista del panel.
- *   GET /admin/api/productos/export?q=&cat=&estado=&disp=&etiqueta=
+ * Exporta el catálogo respetando los filtros de la lista del panel.
+ *   GET /admin/api/productos/export?q=&cat=&estado=&disp=&etiqueta=          → CSV
+ *   GET /admin/api/productos/export?formato=excel&…                          → Excel (.xlsx)
  */
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -74,8 +79,20 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const csv = toCsv([...CSV_HEADERS], salida);
   const fecha = new Date().toISOString().slice(0, 10);
+
+  if ((sp.get("formato") ?? "csv").toLowerCase().startsWith("excel") || sp.get("formato") === "xlsx") {
+    const buffer = await construirExcel(salida);
+    return new NextResponse(buffer as BodyInit, {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="productos-tiowheels-${fecha}.xlsx"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const csv = toCsv([...CSV_HEADERS], salida);
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
@@ -83,4 +100,46 @@ export async function GET(req: NextRequest) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+/** Planilla lista para abrir en Excel: encabezado fijo, filtros, precios en pesos y anchos cómodos. */
+async function construirExcel(filas: (string | number | null)[][]) {
+  const libro = new ExcelJS.Workbook();
+  libro.creator = "Tío Wheels";
+  libro.created = new Date();
+  const hoja = libro.addWorksheet("Productos", { views: [{ state: "frozen", ySplit: 1 }] });
+
+  hoja.columns = [
+    { header: TITULOS[0], key: "codigo", width: 26 },
+    { header: TITULOS[1], key: "nombre", width: 42 },
+    { header: TITULOS[2], key: "slug", width: 32 },
+    { header: TITULOS[3], key: "marca", width: 16 },
+    { header: TITULOS[4], key: "precio", width: 12, style: { numFmt: '"$"#,##0' } },
+    { header: TITULOS[5], key: "precio_anterior", width: 15, style: { numFmt: '"$"#,##0' } },
+    { header: TITULOS[6], key: "stock", width: 9 },
+    { header: TITULOS[7], key: "estado", width: 12 },
+    { header: TITULOS[8], key: "destacado", width: 11 },
+    { header: TITULOS[9], key: "descripcion", width: 50 },
+    { header: TITULOS[10], key: "categorias", width: 34 },
+    { header: TITULOS[11], key: "etiquetas", width: 22 },
+    { header: TITULOS[12], key: "vendidos", width: 10 },
+    { header: TITULOS[13], key: "imagenes", width: 60 },
+  ];
+
+  const cabecera = hoja.getRow(1);
+  cabecera.font = { bold: true, color: { argb: "FF0A0A0A" } };
+  cabecera.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFB0D800" } };
+  cabecera.alignment = { vertical: "middle" };
+  cabecera.height = 22;
+
+  for (const f of filas) hoja.addRow(f);
+  hoja.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: hoja.columns.length } };
+
+  // Stock en rojo cuando está agotado, para verlo de una pasada
+  for (let i = 2; i <= hoja.rowCount; i++) {
+    const celda = hoja.getRow(i).getCell("stock");
+    if (Number(celda.value) <= 0) celda.font = { color: { argb: "FFC0392B" }, bold: true };
+  }
+
+  return Buffer.from(await libro.xlsx.writeBuffer());
 }
