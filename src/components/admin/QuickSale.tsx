@@ -130,6 +130,8 @@ export function QuickSale() {
     setQuery("");
     setResults([]);
     setOpen(false);
+    // Con el ticket empezado se muestran los datos del cliente: si no, la comuna y el envío pasan desapercibidos
+    if (!clienteTocado) setCustomerOpen(true);
     searchRef.current?.focus();
   }
 
@@ -139,11 +141,6 @@ export function QuickSale() {
   function removeLine(key: string) {
     update((d) => ({ ...d, items: d.items.filter((l) => l.key !== key) }));
   }
-
-  // Con el ticket empezado se abren los datos del cliente: si no, la comuna y el envío pasan desapercibidos
-  useEffect(() => {
-    if (draft.items.length > 0 && !clienteTocado) setCustomerOpen(true);
-  }, [draft.items.length, clienteTocado]);
 
   /* --- clientes --- */
   const customerQuery = draft.customer.name.length >= 2 ? draft.customer.name : draft.customer.email.length >= 3 ? draft.customer.email : "";
