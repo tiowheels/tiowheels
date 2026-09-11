@@ -48,8 +48,19 @@ export const getCategoryTree = cache(async () => {
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     select: { id: true, slug: true, name: true, parentId: true, imageUrl: true, featured: true, _count: { select: { products: { where: { status: "ACTIVE", stock: { gt: 0 } } } } } },
   });
+  // El número de una categoría padre incluye sus subcategorías, sin repetir productos:
+  // es lo que se ve al entrar, así que el menú y el listado dan lo mismo.
+  const totales = await db.$queryRaw<{ id: string; n: bigint }[]>`
+    SELECT c."id" AS id, count(DISTINCT cp."B")::bigint AS n
+      FROM "Category" c
+      JOIN "Category" d ON d."id" = c."id" OR d."parentId" = c."id"
+      JOIN "_CategoryToProduct" cp ON cp."A" = d."id"
+      JOIN "Product" p ON p."id" = cp."B"
+     WHERE p."status" = 'ACTIVE' AND p."stock" > 0
+     GROUP BY c."id"`;
+  const totalPorId = new Map(totales.map((t) => [t.id, Number(t.n)]));
   type Node = (typeof cats)[number] & { children: Node[]; count: number };
-  const byId = new Map<string, Node>(cats.map((c) => [c.id, { ...c, children: [], count: c._count.products }]));
+  const byId = new Map<string, Node>(cats.map((c) => [c.id, { ...c, children: [], count: totalPorId.get(c.id) ?? c._count.products }]));
   const roots: Node[] = [];
   for (const c of byId.values()) {
     if (c.parentId && byId.has(c.parentId)) byId.get(c.parentId)!.children.push(c);
