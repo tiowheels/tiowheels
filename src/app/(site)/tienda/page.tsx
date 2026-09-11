@@ -17,7 +17,6 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 function titleFor(filters: ShopQuery, catName: string | null) {
   if (filters.q) return `Resultados para “${filters.q}”`;
   if (filters.cat) return catName ?? "Categoría";
-  if (filters.marca?.length) return filters.marca.join(" · ");
   return "Tienda";
 }
 
@@ -26,13 +25,12 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
   const cat = filters.cat ? await getCategoryBySlug(filters.cat) : null;
   const title = titleFor(filters, cat?.name ?? null);
   const parts = [title];
-  if (filters.cat && filters.marca?.length) parts.push(filters.marca.join(", "));
   if (filters.page && filters.page > 1) parts.push(`Página ${filters.page}`);
-  const description = cat?.description || (filters.q ? `Autos a escala que coinciden con “${filters.q}”. Hot Wheels, Matchbox y más, con envíos a todo Chile.` : "Explora todo el catálogo de Tío Wheels: Hot Wheels básicos, premium, Treasure Hunt, Matchbox y más. Filtra por categoría, marca y precio.");
+  const description = cat?.description || (filters.q ? `Autos a escala que coinciden con “${filters.q}”. Hot Wheels, Matchbox y más, con envíos a todo Chile.` : "Explora todo el catálogo de Tío Wheels: Hot Wheels básicos, premium, Treasure Hunt, Matchbox y más. Filtra por categoría y precio.");
   return {
     title: parts.join(" · "),
     description,
-    robots: filters.q || filters.marca?.length || filters.min != null || filters.max != null ? { index: false, follow: true } : undefined,
+    robots: filters.q || filters.min != null || filters.max != null ? { index: false, follow: true } : undefined,
     alternates: filters.cat && !filters.q ? { canonical: `/tienda?cat=${filters.cat}` } : { canonical: "/tienda" },
   };
 }
@@ -68,7 +66,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
   const from = total ? (page - 1) * result.perPage + 1 : 0;
   const to = Math.min(total, page * result.perPage);
 
-  const hasActiveFilters = Boolean(filters.q || filters.cat || filters.marca?.length || filters.min != null || filters.max != null || filters.agotados);
+  const hasActiveFilters = Boolean(filters.q || filters.cat || filters.min != null || filters.max != null || filters.agotados);
   const panelProps = { filters, tree, priceMin: facets.priceMin, priceMax: facets.priceMax, sortOptions: SORT_OPTIONS };
 
   return (

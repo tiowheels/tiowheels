@@ -115,7 +115,7 @@ export async function responder(mensaje: string): Promise<ChatReply> {
       return {
         text: `Tenemos **${total} ${total === 1 ? "auto" : "autos"} ${marca}** con stock. Te muestro algunos:`,
         products: productos,
-        link: { href: `/tienda?marca=${encodeURIComponent(marca)}`, label: `Ver los ${total} ${marca}` },
+        link: { href: `/tienda?q=${encodeURIComponent(marca)}`, label: `Ver los ${total} ${marca}` },
         suggestions: ["Ver Hot Wheels premium", "¿Cómo son los envíos?"],
       };
     }

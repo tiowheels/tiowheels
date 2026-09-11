@@ -91,7 +91,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
               {brands.slice(0, 7).map((b) => (
-                <Link key={b.name} href={`/tienda?marca=${encodeURIComponent(b.name)}`} className="chip border-white/15 bg-white/5 text-white hover:border-lime hover:bg-white/10">
+                <Link key={b.name} href={`/tienda?q=${encodeURIComponent(b.name)}`} className="chip border-white/15 bg-white/5 text-white hover:border-lime hover:bg-white/10">
                   {b.name}
                 </Link>
               ))}
@@ -214,7 +214,7 @@ export default async function HomePage() {
         <SectionHead eyebrow="Por marca" title="Busca tu marca favorita" href="/tienda" icon={SteeringWheelIcon} />
         <div className="flex flex-wrap gap-2">
           {brands.map((b) => (
-            <Link key={b.name} href={`/tienda?marca=${encodeURIComponent(b.name)}`} className="chip h-10 px-4 text-sm">
+            <Link key={b.name} href={`/tienda?q=${encodeURIComponent(b.name)}`} className="chip h-10 px-4 text-sm">
               {b.name} <span className="text-ink-400">{b.count}</span>
             </Link>
           ))}

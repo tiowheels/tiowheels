@@ -18,7 +18,6 @@ export type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 export type CatalogFilters = {
   q?: string;
   cat?: string; // slug de categoría (incluye hijas)
-  marca?: string[]; // marcas de auto
   min?: number;
   max?: number;
   agotados?: boolean; // incluir sin stock
@@ -74,11 +73,10 @@ async function categoryIdsIncludingChildren(slug: string) {
 
 /* ---------- Búsqueda + filtros (SQL con pg_trgm) ---------- */
 
-function buildWhere(f: CatalogFilters, catIds: string[] | null, opts: { ignoreBrand?: boolean } = {}) {
+function buildWhere(f: CatalogFilters, catIds: string[] | null) {
   const parts: Prisma.Sql[] = [Prisma.sql`p."status" = 'ACTIVE'`];
   if (!f.agotados) parts.push(Prisma.sql`p."stock" > 0`);
   if (catIds) parts.push(Prisma.sql`EXISTS (SELECT 1 FROM "_CategoryToProduct" cp WHERE cp."B" = p."id" AND cp."A" IN (${Prisma.join(catIds)}))`);
-  if (f.marca?.length && !opts.ignoreBrand) parts.push(Prisma.sql`p."brand" IN (${Prisma.join(f.marca)})`);
   if (f.min != null) parts.push(Prisma.sql`p."price" >= ${f.min}`);
   if (f.max != null) parts.push(Prisma.sql`p."price" <= ${f.max}`);
   const terms = f.q ? normalizeText(f.q).split(" ").filter((t) => t.length >= 2) : [];
@@ -106,15 +104,14 @@ export async function searchProducts(f: CatalogFilters) {
   const perPage = Math.min(f.perPage ?? 24, 60);
   const page = Math.max(1, f.page ?? 1);
   const catIds = f.cat ? await categoryIdsIncludingChildren(f.cat) : null;
-  if (f.cat && !catIds) return { items: [] as ProductCardData[], total: 0, page, perPage, pages: 0, facets: { brands: [], priceMin: 0, priceMax: 0 } };
+  if (f.cat && !catIds) return { items: [] as ProductCardData[], total: 0, page, perPage, pages: 0, facets: { priceMin: 0, priceMax: 0 } };
 
   const { where } = buildWhere(f, catIds);
   const order = orderSql(f.orden, f.q);
 
-  const [rows, countRow, brands, price] = await Promise.all([
+  const [rows, countRow, price] = await Promise.all([
     db.$queryRaw<{ id: string }[]>`SELECT p."id" FROM "Product" p WHERE ${where} ORDER BY ${order} LIMIT ${perPage} OFFSET ${(page - 1) * perPage}`,
     db.$queryRaw<{ n: bigint }[]>`SELECT count(*)::bigint AS n FROM "Product" p WHERE ${where}`,
-    db.$queryRaw<{ brand: string; n: bigint }[]>`SELECT p."brand", count(*)::bigint AS n FROM "Product" p WHERE ${buildWhere(f, catIds, { ignoreBrand: true }).where} AND p."brand" IS NOT NULL GROUP BY p."brand" ORDER BY n DESC, p."brand" ASC LIMIT 40`,
     db.$queryRaw<{ min: number | null; max: number | null }[]>`SELECT min(p."price")::int AS min, max(p."price")::int AS max FROM "Product" p WHERE ${buildWhere({ ...f, min: undefined, max: undefined }, catIds).where}`,
   ]);
 
@@ -130,7 +127,6 @@ export async function searchProducts(f: CatalogFilters) {
     perPage,
     pages: Math.ceil(total / perPage),
     facets: {
-      brands: brands.map((b) => ({ name: b.brand, count: Number(b.n) })),
       priceMin: price[0]?.min ?? 0,
       priceMax: price[0]?.max ?? 0,
     },
@@ -266,12 +262,10 @@ export function parseFilters(sp: Record<string, string | string[] | undefined>):
     const v = Number(one(k));
     return Number.isFinite(v) && one(k) !== undefined && one(k) !== "" ? v : undefined;
   };
-  const marca = one("marca")?.split(",").map((s) => s.trim()).filter(Boolean);
   const orden = one("orden") as SortValue | undefined;
   return {
     q: one("q")?.trim() || undefined,
     cat: one("cat") || undefined,
-    marca: marca?.length ? marca : undefined,
     min: num("min"),
     max: num("max"),
     agotados: one("disp") === "todo",

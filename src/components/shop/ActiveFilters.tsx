@@ -9,10 +9,6 @@ export function ActiveFilters({ filters, catName }: { filters: ShopQuery; catNam
   const chips: Chip[] = [];
   if (filters.q) chips.push({ key: "q", label: `“${filters.q}”`, href: buildShopUrl(filters, { q: undefined }) });
   if (filters.cat) chips.push({ key: "cat", label: catName ?? filters.cat, href: buildShopUrl(filters, { cat: undefined }) });
-  for (const m of filters.marca ?? []) {
-    const rest = (filters.marca ?? []).filter((x) => x !== m);
-    chips.push({ key: `marca:${m}`, label: m, href: buildShopUrl(filters, { marca: rest.length ? rest : undefined }) });
-  }
   if (filters.min != null || filters.max != null) {
     const label = filters.min != null && filters.max != null ? `${formatCLP(filters.min)} – ${formatCLP(filters.max)}` : filters.min != null ? `Desde ${formatCLP(filters.min)}` : `Hasta ${formatCLP(filters.max!)}`;
     chips.push({ key: "precio", label, href: buildShopUrl(filters, { min: undefined, max: undefined }) });
