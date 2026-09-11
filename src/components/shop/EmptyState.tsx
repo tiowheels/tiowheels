@@ -4,9 +4,8 @@ import { FuelPumpIcon } from "@/components/ui/AutoIcons";
 import { buildShopUrl, countActiveFilters, type ShopQuery } from "@/lib/shop-url";
 import { whatsappLink } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
-import type { BrandFacet } from "./types";
 
-export function EmptyState({ filters, brands }: { filters: ShopQuery; brands: BrandFacet[] }) {
+export function EmptyState({ filters, categories = [] }: { filters: ShopQuery; categories?: { name: string; slug: string }[] }) {
   const active = countActiveFilters(filters);
   return (
     <div className="card flex flex-col items-center px-6 py-14 text-center sm:py-20">
@@ -17,7 +16,7 @@ export function EmptyState({ filters, brands }: { filters: ShopQuery; brands: Br
       <p className="mt-2 max-w-md text-ink-500">
         {filters.q ? (
           <>
-            Nada coincide con <b className="text-ink">“{filters.q}”</b>. Revisa la ortografía o prueba con un término más corto, como la marca o el modelo.
+            Nada coincide con <b className="text-ink">“{filters.q}”</b>. Revisa la ortografía o prueba con un término más corto, como el modelo o la serie.
           </>
         ) : (
           <>Ningún producto coincide con los filtros seleccionados. Prueba quitando alguno.</>
@@ -40,13 +39,13 @@ export function EmptyState({ filters, brands }: { filters: ShopQuery; brands: Br
         </Link>
       </div>
 
-      {brands.length ? (
+      {categories.length ? (
         <div className="mt-10 w-full max-w-xl">
-          <div className="eyebrow">O busca por marca</div>
+          <div className="eyebrow">O explora por categoría</div>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {brands.map((b) => (
-              <Link key={b.name} href={buildShopUrl({ marca: [b.name] })} className="chip">
-                {b.name} <span className="text-ink-400">{b.count}</span>
+            {categories.map((c) => (
+              <Link key={c.slug} href={buildShopUrl({ cat: c.slug })} className="chip">
+                {c.name}
               </Link>
             ))}
           </div>

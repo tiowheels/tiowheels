@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { parseFilters, searchProducts, getCategoryTree, getCategoryBySlug, getTopBrands, SORT_OPTIONS } from "@/lib/catalog";
+import { parseFilters, searchProducts, getCategoryTree, getCategoryBySlug, SORT_OPTIONS } from "@/lib/catalog";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { ActiveFilters } from "@/components/shop/ActiveFilters";
 import { FilterPanel } from "@/components/shop/FilterPanel";
@@ -39,7 +39,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SearchP
 
 export default async function ShopPage({ searchParams }: { searchParams: SearchParams }) {
   const filters = parseFilters(await searchParams);
-  const [result, rawTree, category, topBrands] = await Promise.all([searchProducts(filters), getCategoryTree(), filters.cat ? getCategoryBySlug(filters.cat) : null, getTopBrands(10)]);
+  const [result, rawTree, category] = await Promise.all([searchProducts(filters), getCategoryTree(), filters.cat ? getCategoryBySlug(filters.cat) : null]);
 
   const tree: ShopCategoryNode[] = rawTree.map((r) => ({
     slug: r.slug,
@@ -69,7 +69,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
   const to = Math.min(total, page * result.perPage);
 
   const hasActiveFilters = Boolean(filters.q || filters.cat || filters.marca?.length || filters.min != null || filters.max != null || filters.agotados);
-  const panelProps = { filters, tree, brands: facets.brands, priceMin: facets.priceMin, priceMax: facets.priceMax, sortOptions: SORT_OPTIONS };
+  const panelProps = { filters, tree, priceMin: facets.priceMin, priceMax: facets.priceMax, sortOptions: SORT_OPTIONS };
 
   return (
     <div className="pb-16">
@@ -129,7 +129,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
                 <Pagination filters={filters} page={page} pages={pages} className="mt-10" />
               </>
             ) : (
-              <EmptyState filters={filters} brands={topBrands} />
+              <EmptyState filters={filters} categories={tree.slice(0, 10).map((c) => ({ name: c.name, slug: c.slug }))} />
             )}
           </div>
         </section>

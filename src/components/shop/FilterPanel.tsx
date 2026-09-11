@@ -2,16 +2,15 @@
 
 import { useId, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Search, Check } from "lucide-react";
-import { buildShopUrl, toggleBrand, type ShopQuery } from "@/lib/shop-url";
+import { buildShopUrl, type ShopQuery } from "@/lib/shop-url";
 import { cn, formatCLP } from "@/lib/format";
-import type { BrandFacet, ShopCategoryNode, SortOption } from "./types";
+import type { ShopCategoryNode, SortOption } from "./types";
 import { SortSelect } from "./SortSelect";
 import { useShopNav } from "./useShopNav";
 
 export type FilterPanelProps = {
   filters: ShopQuery;
   tree: ShopCategoryNode[];
-  brands: BrandFacet[];
   priceMin: number;
   priceMax: number;
   sortOptions: readonly SortOption[];
@@ -20,7 +19,7 @@ export type FilterPanelProps = {
   idPrefix?: string;
 };
 
-export function FilterPanel({ filters, tree, brands, priceMin, priceMax, sortOptions, showSort, idPrefix = "f" }: FilterPanelProps) {
+export function FilterPanel({ filters, tree, priceMin, priceMax, sortOptions, showSort, idPrefix = "f" }: FilterPanelProps) {
   const { go, pending } = useShopNav();
 
   return (
@@ -35,12 +34,6 @@ export function FilterPanel({ filters, tree, brands, priceMin, priceMax, sortOpt
       <Section title="Categorías">
         <CategoryTree filters={filters} tree={tree} onGo={go} />
       </Section>
-
-      {brands.length ? (
-        <Section title="Marca">
-          <BrandList filters={filters} brands={brands} onGo={go} idPrefix={idPrefix} />
-        </Section>
-      ) : null}
 
       <Section title="Precio">
         <PriceRange filters={filters} priceMin={priceMin} priceMax={priceMax} onGo={go} idPrefix={idPrefix} />
@@ -156,59 +149,6 @@ function CategoryTree({ filters, tree, onGo }: { filters: ShopQuery; tree: ShopC
       {roots.length > LIMIT ? (
         <button type="button" onClick={() => setShowAll((s) => !s)} className="mt-2 px-2 text-[13px] font-semibold text-lime-700 hover:underline">
           {showAll ? "Ver menos" : `Ver todas (${roots.length})`}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-/* ---------- Marcas ---------- */
-
-function BrandList({ filters, brands, onGo, idPrefix }: { filters: ShopQuery; brands: BrandFacet[]; onGo: (url: string) => void; idPrefix: string }) {
-  const [term, setTerm] = useState("");
-  const [showAll, setShowAll] = useState(false);
-  const selected = useMemo(() => new Set(filters.marca ?? []), [filters.marca]);
-  const LIMIT = 8;
-
-  const list = useMemo(() => {
-    const t = term.trim().toLowerCase();
-    const filtered = t ? brands.filter((b) => b.name.toLowerCase().includes(t)) : brands;
-    // Las seleccionadas siempre arriba.
-    return [...filtered].sort((a, b) => Number(selected.has(b.name)) - Number(selected.has(a.name)));
-  }, [brands, term, selected]);
-
-  const visible = showAll || term ? list : list.slice(0, LIMIT);
-
-  return (
-    <div>
-      {brands.length > LIMIT ? (
-        <div className="relative mb-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" aria-hidden />
-          <input type="search" value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Buscar marca" aria-label="Buscar marca" className="input h-9 rounded-lg pl-9 text-sm" />
-        </div>
-      ) : null}
-      <ul className="flex flex-col gap-0.5">
-        {visible.map((b) => {
-          const checked = selected.has(b.name);
-          const id = `${idPrefix}-marca-${b.name.replace(/\W+/g, "-")}`;
-          return (
-            <li key={b.name}>
-              <label htmlFor={id} className={cn("flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition hover:bg-ink-50", checked && "font-bold")}>
-                <input id={id} type="checkbox" checked={checked} onChange={() => onGo(toggleBrand(filters, b.name))} className="peer sr-only" />
-                <span className={cn("flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border transition peer-focus-visible:ring-2 peer-focus-visible:ring-lime peer-focus-visible:ring-offset-1", checked ? "border-ink bg-ink text-white" : "border-ink-300 bg-white")} aria-hidden>
-                  {checked ? <Check className="size-3" strokeWidth={3} /> : null}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-ink-700">{b.name}</span>
-                <span className="text-xs tabular-nums text-ink-400">{b.count}</span>
-              </label>
-            </li>
-          );
-        })}
-        {!visible.length ? <li className="px-2 py-1.5 text-sm text-ink-400">Sin coincidencias</li> : null}
-      </ul>
-      {!term && list.length > LIMIT ? (
-        <button type="button" onClick={() => setShowAll((s) => !s)} className="mt-2 px-2 text-[13px] font-semibold text-lime-700 hover:underline">
-          {showAll ? "Ver menos" : `Ver todas (${list.length})`}
         </button>
       ) : null}
     </div>
