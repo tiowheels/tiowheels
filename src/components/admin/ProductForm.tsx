@@ -8,6 +8,7 @@ import { Save, Loader2, Trash2, ArrowUp, ArrowDown, Camera, ImagePlus, X, Copy, 
 import { cn, slugify, normalizeText } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
 import { saveProduct, deleteProductImage, moveProductImage, duplicateProduct, deleteProduct } from "@/app/admin/(panel)/productos/actions";
+import { esAccionVencida, AVISO_ACCION_VENCIDA, recargarPorActualizacion } from "@/lib/accion-vencida";
 
 export type ProductFormData = {
   id: string;
@@ -115,16 +116,26 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
     fd.delete("images");
     for (const f of pendingFiles) fd.append("images", f);
     start(async () => {
-      const r = await saveProduct(fd);
-      if (!r.ok) {
-        setError(r.error);
-        return;
-      }
-      setPendingFiles([]);
-      if (!product) router.replace(`/admin/productos/${r.id}?creado=1`);
-      else {
-        setNotice("Cambios guardados");
-        router.refresh();
+      try {
+        const r = await saveProduct(fd);
+        if (!r.ok) {
+          setError(r.error);
+          return;
+        }
+        setPendingFiles([]);
+        if (!product) router.replace(`/admin/productos/${r.id}?creado=1`);
+        else {
+          setNotice("Cambios guardados");
+          router.refresh();
+        }
+      } catch (err) {
+        if (esAccionVencida(err)) {
+          setError(AVISO_ACCION_VENCIDA);
+          recargarPorActualizacion();
+          return;
+        }
+        console.error("[producto] error al guardar", err);
+        setError("No se pudo guardar. Revisa la conexión e inténtalo de nuevo.");
       }
     });
   }

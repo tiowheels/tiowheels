@@ -8,6 +8,7 @@ import { cn, formatCLP } from "@/lib/format";
 import { registerManualSale, type ManualSaleResult } from "@/app/admin/(panel)/venta-rapida/actions";
 import { whatsappTo } from "./labels";
 import { REGIONS } from "@/lib/chile";
+import { esAccionVencida, AVISO_ACCION_VENCIDA, recargarPorActualizacion } from "@/lib/accion-vencida";
 
 type SearchProduct = { id: string; name: string; price: number; compareAtPrice: number | null; stock: number; brand: string | null; status: string; image: string };
 type Line = { key: string; productId: string; name: string; image: string; listPrice: number; price: number; quantity: number; stock: number };
@@ -197,23 +198,34 @@ export function QuickSale() {
     }
     setSuccessPhone(draft.customer.phone);
     startTransition(async () => {
-      const r = await registerManualSale({
-        items: draft.items.map((l) => ({ productId: l.productId, quantity: l.quantity, price: l.price })),
-        customer: draft.customer,
-        paymentMethod: draft.paymentMethod,
-        shippingMethod: draft.shippingMethod,
-        note: draft.note,
-        discount,
-      });
-      if (r.ok) {
-        setSuccess(r);
-        setDraft(EMPTY);
-        try {
-          localStorage.removeItem(STORAGE_KEY);
-        } catch {
-          /* ignorar */
+      try {
+        const r = await registerManualSale({
+          items: draft.items.map((l) => ({ productId: l.productId, quantity: l.quantity, price: l.price })),
+          customer: draft.customer,
+          paymentMethod: draft.paymentMethod,
+          shippingMethod: draft.shippingMethod,
+          note: draft.note,
+          discount,
+        });
+        if (r.ok) {
+          setSuccess(r);
+          setDraft(EMPTY);
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            /* ignorar */
+          }
+        } else setError(r.error);
+      } catch (err) {
+        // El ticket queda guardado en el teléfono, así que recargar no lo pierde
+        if (esAccionVencida(err)) {
+          setError(AVISO_ACCION_VENCIDA);
+          recargarPorActualizacion();
+          return;
         }
-      } else setError(r.error);
+        console.error("[venta rápida] error al registrar", err);
+        setError("No se pudo registrar la venta. Revisa la conexión y vuelve a intentar; el ticket sigue guardado.");
+      }
     });
   }
 
