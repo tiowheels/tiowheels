@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { flowConfigured } from "@/lib/flow";
-import { mailConfigured } from "@/lib/mail";
+import { mailStatus } from "@/lib/mail";
 import { SITE } from "@/lib/site";
 import { getStoreSettings, getNewsletterEmails } from "@/app/admin/_lib/settings";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -13,11 +13,11 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const admin = await requireAdmin();
-  const [store, emails] = await Promise.all([getStoreSettings(), getNewsletterEmails()]);
+  const [store, emails, correo] = await Promise.all([getStoreSettings(), getNewsletterEmails(), mailStatus()]);
   const flowUrl = process.env.FLOW_API_URL || "https://sandbox.flow.cl/api";
   const integrations = [
     { name: "Flow (pagos online)", ok: flowConfigured(), detail: flowConfigured() ? (flowUrl.includes("sandbox") ? "Modo sandbox (pruebas)" : "Producción") : "Sin claves: la tienda solo ofrece transferencia" },
-    { name: "Correo (SMTP)", ok: mailConfigured(), detail: mailConfigured() ? `Envía desde ${process.env.SMTP_FROM || process.env.SMTP_USER}` : "Sin SMTP: los correos se registran en consola" },
+    { name: "Correo (SMTP)", ok: correo.ok, detail: correo.detail },
     { name: "Almacenamiento de imágenes", ok: true, detail: process.env.STORAGE_DIR ? "Volumen configurado" : "Carpeta local ./storage" },
     { name: "Sitio público", ok: true, detail: SITE.url },
   ];
