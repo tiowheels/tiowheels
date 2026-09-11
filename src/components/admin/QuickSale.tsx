@@ -18,6 +18,8 @@ type PaymentMethod = "CASH" | "TRANSFER" | "CARD_POS" | "OTHER";
 type Draft = { items: Line[]; customer: Customer; paymentMethod: PaymentMethod; shippingMethod: "NONE" | "PICKUP" | "DELIVERY_COD"; note: string; discount: number };
 
 const STORAGE_KEY = "tw-admin-ticket-v1";
+/** Cuántos resultados se traen de una vez en el buscador. */
+const PASO_RESULTADOS = 24;
 const EMPTY: Draft = { items: [], customer: { name: "", phone: "", email: "", rut: "", address1: "", region: "", city: "", save: false }, paymentMethod: "CASH", shippingMethod: "NONE", note: "", discount: 0 };
 
 const PAYMENTS: { value: PaymentMethod; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -39,6 +41,8 @@ export function QuickSale() {
   const [results, setResults] = useState<SearchProduct[]>([]);
   const [showAll, setShowAll] = useState(true); // se buscan también los agotados; el stock igual se valida al registrar
   const [searching, setSearching] = useState(false);
+  const [limite, setLimite] = useState(PASO_RESULTADOS);
+  const [totalResultados, setTotalResultados] = useState(0);
   const [open, setOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerHits, setCustomerHits] = useState<CustomerHit[]>([]);
@@ -91,13 +95,14 @@ export function QuickSale() {
     const t = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/admin/api/products?q=${encodeURIComponent(query)}${showAll ? "&all=1" : ""}`, { signal: ctrl.signal, cache: "no-store" });
+        const res = await fetch(`/admin/api/products?q=${encodeURIComponent(query)}&limit=${limite}${showAll ? "&all=1" : ""}`, { signal: ctrl.signal, cache: "no-store" });
         if (res.status === 401) {
           router.push("/admin/login");
           return;
         }
-        const json = (await res.json()) as { products: SearchProduct[] };
+        const json = (await res.json()) as { products: SearchProduct[]; total?: number };
         setResults(json.products ?? []);
+        setTotalResultados(json.total ?? json.products?.length ?? 0);
       } catch (e) {
         if ((e as Error).name !== "AbortError") setResults([]);
       } finally {
@@ -108,11 +113,17 @@ export function QuickSale() {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [query, showAll, open, router]);
+  }, [query, showAll, open, router, limite]);
 
   function showToast(msg: string) {
     setToast(msg);
     window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 1600);
+  }
+
+  // Con una búsqueda nueva se parte otra vez de los primeros resultados
+  function buscar(texto: string) {
+    setQuery(texto);
+    setLimite(PASO_RESULTADOS);
   }
 
   function addProduct(p: SearchProduct) {
@@ -264,7 +275,7 @@ export function QuickSale() {
                 if (query.trim() || draft.items.length === 0) setOpen(true);
               }}
               onChange={(e) => {
-                setQuery(e.target.value);
+                buscar(e.target.value);
                 setOpen(true);
               }}
               onKeyDown={(e) => {
@@ -283,7 +294,7 @@ export function QuickSale() {
                 type="button"
                 aria-label="Cerrar búsqueda"
                 onClick={() => {
-                  setQuery("");
+                  buscar("");
                   setOpen(false);
                 }}
                 className="absolute right-2 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-ink-400 hover:bg-ink-50 hover:text-ink"
@@ -329,6 +340,18 @@ export function QuickSale() {
                   </li>
                 ))}
               </ul>
+            )}
+            {results.length > 0 && (
+              <div className="flex items-center justify-between gap-2 border-t border-ink-100 px-3 py-2 text-xs text-ink-500">
+                <span>
+                  {totalResultados > results.length ? `Mostrando ${results.length} de ${totalResultados}` : `${results.length} ${results.length === 1 ? "resultado" : "resultados"}`}
+                </span>
+                {totalResultados > results.length && (
+                  <button type="button" onClick={() => setLimite((n) => n + PASO_RESULTADOS)} disabled={searching} className="btn-outline btn-sm">
+                    {searching ? <Loader2 className="size-4 animate-spin" /> : null} Ver más
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}

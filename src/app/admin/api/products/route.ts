@@ -9,6 +9,8 @@ import { mediaUrl } from "@/lib/media-url";
  * Búsqueda instantánea para el panel (venta rápida).
  *   GET /admin/api/products?q=datsun            → productos con stock
  *   GET /admin/api/products?q=datsun&all=1      → incluye agotados
+ *   GET /admin/api/products?q=datsun&limit=48   → más resultados (tope 100)
+ * Devuelve { total, products }: total es cuántos calzan, para saber si falta ver más.
  *   GET /admin/api/products?type=customer&q=ana → clientes
  * Protegido: requiere sesión ADMIN (responde 401 en JSON en vez de redirigir).
  */
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const q = (sp.get("q") ?? "").trim();
   const type = sp.get("type") ?? "product";
-  const limit = Math.min(20, Math.max(1, Number(sp.get("limit") ?? 12)));
+  const limit = Math.min(100, Math.max(1, Number(sp.get("limit") ?? 24)));
 
   if (type === "customer") {
     if (q.length < 2) return NextResponse.json({ customers: [] });
@@ -48,7 +50,11 @@ export async function GET(req: NextRequest) {
   for (const t of terms) conds.push(Prisma.sql`(p."searchText" ILIKE ${"%" + t + "%"} OR p."name" ILIKE ${"%" + t + "%"})`);
   const where = Prisma.join(conds, " AND ");
   const order = q ? Prisma.sql`similarity(p."name", ${normalizeText(q)}) DESC, p."stock" DESC, p."updatedAt" DESC` : Prisma.sql`p."updatedAt" DESC`;
-  const rows = await db.$queryRaw<{ id: string }[]>`SELECT p."id" FROM "Product" p WHERE ${where} ORDER BY ${order} LIMIT ${limit}`;
+  const [rows, totalRow] = await Promise.all([
+    db.$queryRaw<{ id: string }[]>`SELECT p."id" FROM "Product" p WHERE ${where} ORDER BY ${order} LIMIT ${limit}`,
+    db.$queryRaw<{ n: bigint }[]>`SELECT count(*)::bigint AS n FROM "Product" p WHERE ${where}`,
+  ]);
+  const total = Number(totalRow[0]?.n ?? 0);
   const ids = rows.map((r) => r.id);
   const products = ids.length
     ? await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, price: true, compareAtPrice: true, stock: true, brand: true, status: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } })
@@ -56,6 +62,7 @@ export async function GET(req: NextRequest) {
   const byId = new Map(products.map((p) => [p.id, p]));
   return NextResponse.json(
     {
+      total,
       products: ids
         .map((id) => byId.get(id))
         .filter((p): p is NonNullable<typeof p> => Boolean(p))
