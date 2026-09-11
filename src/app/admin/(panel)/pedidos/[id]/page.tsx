@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Truck } from "lucide-react";
+import { Truck, Phone } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatCLP, formatDateTime, formatRut } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
 import { regionName } from "@/lib/chile";
-import { ORDER_CHANNEL, PAYMENT_METHOD, SHIPPING_METHOD } from "@/components/admin/labels";
+import { ORDER_CHANNEL, PAYMENT_METHOD, SHIPPING_METHOD, whatsappTo, orderWhatsappMessage } from "@/components/admin/labels";
+import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { OrderStatusBadge, ChannelBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { OrderActions } from "@/components/admin/OrderActions";
@@ -58,6 +59,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const address = [order.address1, order.address2, order.commune, order.city, regionName(order.region)].filter(Boolean).join(", ");
   const isLegacy = order.channel.startsWith("LEGACY");
+  // Mensaje sugerido según el estado, igual que el botón grande de acciones
+  const waCliente = whatsappTo(order.phone, orderWhatsappMessage(order));
 
   return (
     <>
@@ -146,15 +149,25 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </a>
                   </dd>
                 )}
-                {order.phone && (
-                  <dd>
-                    <a href={`tel:${order.phone}`} className="hover:underline">
-                      {order.phone}
-                    </a>
-                  </dd>
-                )}
+                {order.phone && <dd>{order.phone}</dd>}
                 {!order.email && !order.phone && <dd className="text-ink-400">Sin datos de contacto</dd>}
               </dl>
+              {order.phone && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <a href={`tel:${order.phone}`} className="btn-outline btn-sm">
+                    <Phone className="size-4" /> Llamar
+                  </a>
+                  {waCliente ? (
+                    <a href={waCliente} target="_blank" rel="noreferrer" className="btn-outline btn-sm border-[#25D366] text-[#128C4A] hover:bg-[#25D366]/10">
+                      <WhatsAppIcon className="size-4" /> WhatsApp
+                    </a>
+                  ) : (
+                    <span className="btn-outline btn-sm pointer-events-none opacity-40" title="El número no sirve para WhatsApp">
+                      <WhatsAppIcon className="size-4" /> WhatsApp
+                    </span>
+                  )}
+                </div>
+              )}
               {order.user && (
                 <Link href={`/admin/clientes/${order.user.id}`} className="mt-3 inline-block text-xs font-semibold text-ink-500 hover:text-ink">
                   Ver ficha del cliente →
