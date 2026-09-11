@@ -42,6 +42,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
   const [slugTouched, setSlugTouched] = useState(Boolean(product));
   const slug = slugTouched ? slugState : slugify(name);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [preparando, setPreparando] = useState(false);
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set(product?.categoryIds ?? []));
   const [catQuery, setCatQuery] = useState("");
   const [zoom, setZoom] = useState<string | null>(null);
@@ -66,11 +67,45 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
   const previews = useMemo(() => pendingFiles.map((f) => ({ file: f, url: URL.createObjectURL(f) })), [pendingFiles]);
   useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews]);
 
-  function addFiles(list: FileList | null) {
+  /**
+   * Achica la foto antes de subirla. Una foto de celular pesa varios MB y entre
+   * todas superaban el límite del servidor: el formulario llegaba cortado y fallaba.
+   * Además sube mucho más rápido con datos móviles. Si algo falla, se manda tal cual.
+   */
+  async function comprimirFoto(file: File, lado = 1800, calidad = 0.85): Promise<File> {
+    if (!file.type.startsWith("image/") || file.size < 600_000) return file;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height));
+      const w = Math.round(bitmap.width * escala);
+      const h = Math.round(bitmap.height * escala);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", calidad));
+      if (!blob || blob.size >= file.size) return file;
+      return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg", lastModified: Date.now() });
+    } catch {
+      return file;
+    }
+  }
+
+  async function addFiles(list: FileList | null) {
     if (!list) return;
-    const files = Array.from(list).filter((f) => f.type.startsWith("image/"));
-    setPendingFiles((prev) => [...prev, ...files]);
+    const originales = Array.from(list).filter((f) => f.type.startsWith("image/"));
+    if (!originales.length) return;
     if (fileRef.current) fileRef.current.value = "";
+    setPreparando(true);
+    try {
+      const listas = await Promise.all(originales.map((f) => comprimirFoto(f)));
+      setPendingFiles((prev) => [...prev, ...listas]);
+    } finally {
+      setPreparando(false);
+    }
   }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -188,6 +223,11 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
               <input type="file" accept="image/*" capture="environment" onChange={(e) => addFiles(e.target.files)} className="sr-only" />
             </label>
           </div>
+          {preparando && (
+            <p className="mt-2 flex items-center gap-2 text-xs font-semibold text-lime-700">
+              <Loader2 className="size-3.5 animate-spin" /> Preparando las fotos…
+            </p>
+          )}
           <p className="mt-2 text-xs text-ink-400">Toca una foto para verla en grande y confirmar que es el auto correcto. Se guardan en webp en tres tamaños. Las nuevas se agregan al final; usa las flechas para ordenar. La primera es la principal.</p>
         </section>
 
@@ -331,7 +371,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
             </p>
           )}
           {notice && !error && <p className="rounded-xl bg-success/10 px-4 py-3 text-sm font-medium text-success">{notice}</p>}
-          <button type="submit" disabled={pending} className="btn-lime btn-lg w-full shadow-pop">
+          <button type="submit" disabled={pending || preparando} className="btn-lime btn-lg w-full shadow-pop">
             {pending ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5" />}
             {pending ? "Guardando…" : product ? "Guardar cambios" : "Crear producto"}
           </button>

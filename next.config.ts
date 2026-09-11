@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["sharp", "pg", "@prisma/adapter-pg", "@prisma/client"],
   experimental: {
     serverActions: { bodySizeLimit: "25mb" },
+    // Con proxy, Next guarda el cuerpo en memoria y por defecto corta en 10 MB:
+    // las fotos de celular pasaban ese límite y el formulario llegaba incompleto.
+    proxyClientMaxBodySize: "25mb",
   },
   async redirects() {
     // URLs del sitio WooCommerce anterior → nuevas rutas (SEO)
