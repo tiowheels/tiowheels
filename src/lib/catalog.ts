@@ -327,10 +327,12 @@ export async function getRecentSales(take = 14) {
 
 /** Cifras para los contadores animados. */
 export async function getSiteStats() {
-  const [inStock, orders, customers] = await Promise.all([
+  const vendidos: Prisma.OrderWhereInput = { status: { in: ["PAID", "PROCESSING", "SHIPPED", "COMPLETED"] } };
+  const [inStock, orders, units] = await Promise.all([
     db.product.count({ where: { status: "ACTIVE", stock: { gt: 0 } } }),
-    db.order.count({ where: { status: { in: ["PAID", "PROCESSING", "SHIPPED", "COMPLETED"] } } }),
-    db.user.count({ where: { role: "CUSTOMER" } }),
+    db.order.count({ where: vendidos }),
+    // Autos vendidos: unidades, no líneas de pedido
+    db.orderItem.aggregate({ where: { order: vendidos }, _sum: { quantity: true } }),
   ]);
-  return { inStock, orders, customers };
+  return { inStock, orders, unitsSold: units._sum.quantity ?? 0 };
 }

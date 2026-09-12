@@ -105,7 +105,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="container-x relative pb-10">
-          <StatsCounter stats={[{ value: stats.inStock, prefix: "+", label: "modelos con stock" }, { value: stats.orders, prefix: "+", label: "pedidos entregados" }, { value: stats.customers, prefix: "+", label: "coleccionistas" }]} />
+          <StatsCounter stats={[{ value: stats.inStock, prefix: "+", label: "modelos con stock" }, { value: stats.orders, prefix: "+", label: "pedidos entregados" }, { value: stats.unitsSold, prefix: "+", label: "autos vendidos" }]} />
         </div>
         <div className="border-t border-white/10 bg-white/[0.03]">
           <div className="container-x grid grid-cols-2 gap-4 py-5 md:grid-cols-4">
