@@ -10,6 +10,7 @@ import { ORDER_CHANNEL, PAYMENT_METHOD, SHIPPING_METHOD, whatsappTo, orderWhatsa
 import { WhatsAppIcon } from "@/components/ui/BrandIcons";
 import { OrderStatusBadge, ChannelBadge, PaymentStatusBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { hrefVolver } from "@/app/admin/_lib/volver";
 import { OrderActions } from "@/components/admin/OrderActions";
 import { ShippingForm } from "@/components/admin/ShippingForm";
 
@@ -49,8 +50,8 @@ function rawEntries(raw: unknown): [string, string][] {
   return out;
 }
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function OrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
   const order = await db.order.findUnique({
     where: { id },
     include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
@@ -65,7 +66,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   return (
     <>
       <PageHeader
-        back={{ href: "/admin/pedidos", label: "Pedidos" }}
+        back={{ href: hrefVolver("/admin/pedidos", sp.volver) ?? "/admin/pedidos", label: sp.volver ? "Volver a la búsqueda" : "Pedidos" }}
         title={
           <span className="flex flex-wrap items-center gap-2">
             Pedido #{order.number}
@@ -96,7 +97,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-contain" />
                   <div className="min-w-0 flex-1">
                     {it.product ? (
-                      <Link href={`/admin/productos/${it.product.id}?pedido=${order.id}`} className="line-clamp-2 text-sm font-semibold hover:underline">
+                      <Link href={`/admin/productos/${it.product.id}?pedido=${order.id}${sp.volver ? `&volver=${encodeURIComponent(String(sp.volver))}` : ""}`} className="line-clamp-2 text-sm font-semibold hover:underline">
                         {it.name}
                       </Link>
                     ) : (
@@ -169,7 +170,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
               )}
               {order.user && (
-                <Link href={`/admin/clientes/${order.user.id}?pedido=${order.id}`} className="mt-3 inline-block text-xs font-semibold text-ink-500 hover:text-ink">
+                <Link href={`/admin/clientes/${order.user.id}?pedido=${order.id}${sp.volver ? `&volver=${encodeURIComponent(String(sp.volver))}` : ""}`} className="mt-3 inline-block text-xs font-semibold text-ink-500 hover:text-ink">
                   Ver ficha del cliente →
                 </Link>
               )}

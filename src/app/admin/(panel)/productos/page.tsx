@@ -12,6 +12,7 @@ import { PageHeader, EmptyState } from "@/components/admin/PageHeader";
 import { Pagination } from "@/components/admin/Pagination";
 import { FilterForm, CollapsibleFilters } from "@/components/admin/FilterForm";
 import { ProductQuickEdit } from "@/components/admin/ProductQuickEdit";
+import { paramVolver } from "@/app/admin/_lib/volver";
 
 export const metadata: Metadata = { title: "Productos" };
 export const dynamic = "force-dynamic";
@@ -107,6 +108,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const total = Number(countRow[0]?.n ?? 0);
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   const params = { q, disp, cat, estado, orden };
+  const volver = paramVolver({ q, disp: dispParam, cat, etiqueta, estado, orden: orden !== "reciente" ? orden : "", page: page > 1 ? page : "" });
 
   const dispChips = [
     { value: "stock", label: "Con stock" },
@@ -219,11 +221,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             {products.map((p) => (
               <li key={p.id} className="card p-3">
                 <div className="flex gap-3">
-                  <Link href={`/admin/productos/${p.id}`} className="shrink-0">
+                  <Link href={`/admin/productos/${p.id}${volver}`} className="shrink-0">
                     <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" className="size-24 rounded-xl bg-ink-50 object-contain" loading="lazy" />
                   </Link>
                   <div className="min-w-0 flex-1">
-                    <Link href={`/admin/productos/${p.id}`} className="line-clamp-2 text-sm font-semibold leading-tight">
+                    <Link href={`/admin/productos/${p.id}${volver}`} className="line-clamp-2 text-sm font-semibold leading-tight">
                       {p.name}
                     </Link>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-500">
@@ -274,12 +276,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 {products.map((p) => (
                   <tr key={p.id} className="transition hover:bg-lime-50/60">
                     <td className="w-20 py-2 pl-4">
-                      <Link href={`/admin/productos/${p.id}`}>
+                      <Link href={`/admin/productos/${p.id}${volver}`}>
                         <img src={mediaUrl(p.images[0]?.path, "thumb")} alt="" className="size-16 rounded-lg bg-ink-50 object-contain" loading="lazy" />
                       </Link>
                     </td>
                     <td className="px-4 py-2">
-                      <Link href={`/admin/productos/${p.id}`} className="line-clamp-2 font-semibold hover:underline">
+                      <Link href={`/admin/productos/${p.id}${volver}`} className="line-clamp-2 font-semibold hover:underline">
                         {p.name}
                       </Link>
                       <div className="text-xs text-ink-400">

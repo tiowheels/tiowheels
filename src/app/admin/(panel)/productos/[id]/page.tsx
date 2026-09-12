@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { hrefVolver } from "@/app/admin/_lib/volver";
 import { ProductStatusBadge } from "@/components/admin/StatusBadge";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { getCategoryNodes, getTags } from "@/app/admin/_lib/products";
@@ -33,7 +34,7 @@ export default async function EditProductPage({ params, searchParams }: { params
   return (
     <>
       <PageHeader
-        back={volverA ? { href: `/admin/pedidos/${volverA.id}`, label: `Pedido #${volverA.number}` } : { href: "/admin/productos", label: "Productos" }}
+        back={volverA ? { href: `/admin/pedidos/${volverA.id}${typeof sp.volver === "string" ? `?volver=${encodeURIComponent(sp.volver)}` : ""}`, label: `Pedido #${volverA.number}` } : { href: hrefVolver("/admin/productos", sp.volver) ?? "/admin/productos", label: sp.volver ? "Volver a la búsqueda" : "Productos" }}
         title={
           <span className="flex flex-wrap items-center gap-2">
             <span className="line-clamp-2">{product.name}</span>

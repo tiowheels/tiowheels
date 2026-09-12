@@ -10,6 +10,7 @@ import { OrderStatusBadge, ChannelBadge, PaymentStatusBadge } from "@/components
 import { PageHeader, EmptyState } from "@/components/admin/PageHeader";
 import { Pagination } from "@/components/admin/Pagination";
 import { FilterForm, CollapsibleFilters } from "@/components/admin/FilterForm";
+import { paramVolver } from "@/app/admin/_lib/volver";
 import { after } from "next/server";
 import { expirarPedidosSinPago } from "@/lib/orders";
 export const metadata: Metadata = { title: "Pedidos" };
@@ -45,7 +46,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       { phone: { contains: q } },
     ];
   }
-  const [orders, total] = await Promise.all([
+  const [orders, total, unidades] = await Promise.all([
     db.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -54,13 +55,24 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       select: { id: true, number: true, firstName: true, lastName: true, email: true, phone: true, total: true, status: true, channel: true, paymentMethod: true, paymentStatus: true, createdAt: true, trackingCode: true, carrier: true, _count: { select: { items: true } } },
     }),
     db.order.count({ where }),
+    db.orderItem.aggregate({ where: { order: where }, _sum: { quantity: true } }),
   ]);
+  // Autos por pedido: los ítems cuentan líneas, no unidades
+  const porPedido = orders.length
+    ? await db.orderItem.groupBy({ by: ["orderId"], where: { orderId: { in: orders.map((o) => o.id) } }, _sum: { quantity: true } })
+    : [];
+  const autosDe = new Map(porPedido.map((r) => [r.orderId, r._sum.quantity ?? 0]));
+  const totalAutos = unidades._sum.quantity ?? 0;
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   const params = { q, estado, canal, desde, hasta };
+  const volver = paramVolver({ ...params, page: page > 1 ? page : "" });
   const hasFilters = Boolean(q || estado || canal || desde || hasta);
   return (
     <>
-      <PageHeader title="Pedidos" description={`${total.toLocaleString("es-CL")} ${total === 1 ? "pedido" : "pedidos"}${hasFilters ? " con estos filtros" : ""}`}>
+      <PageHeader
+        title="Pedidos"
+        description={`${total.toLocaleString("es-CL")} ${total === 1 ? "pedido" : "pedidos"} · ${totalAutos.toLocaleString("es-CL")} ${totalAutos === 1 ? "auto" : "autos"}${hasFilters ? " con estos filtros" : ""}`}
+      >
         <Link href="/admin/venta-rapida" className="btn-lime btn-md">
           <Zap className="size-4" /> Venta rápida
         </Link>
@@ -110,7 +122,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           <ul className="space-y-2 md:hidden">
             {orders.map((o) => (
               <li key={o.id}>
-                <Link href={`/admin/pedidos/${o.id}`} className="card block p-4">
+                <Link href={`/admin/pedidos/${o.id}${volver}`} className="card block p-4">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-base font-black tabular-nums">#{o.number}</span>
                     <span className="text-base font-bold tabular-nums">{formatCLP(o.total)}</span>
@@ -119,7 +131,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     {o.firstName} {o.lastName ?? ""}
                   </div>
                   <div className="mt-0.5 text-xs text-ink-500">
-                    {formatDateTime(o.createdAt)} · {o._count.items} {o._count.items === 1 ? "ítem" : "ítems"} · {PAYMENT_METHOD[o.paymentMethod]}
+                    {formatDateTime(o.createdAt)} · {autosDe.get(o.id) ?? 0} {(autosDe.get(o.id) ?? 0) === 1 ? "auto" : "autos"} · {PAYMENT_METHOD[o.paymentMethod]}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <OrderStatusBadge status={o.status} />
@@ -149,13 +161,13 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 {orders.map((o) => (
                   <tr key={o.id} className="transition hover:bg-lime-50/60">
                     <td className="px-4 py-3 font-black tabular-nums">
-                      <Link href={`/admin/pedidos/${o.id}`} className="block">
+                      <Link href={`/admin/pedidos/${o.id}${volver}`} className="block">
                         #{o.number}
                       </Link>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-ink-600">{formatDateTime(o.createdAt)}</td>
                     <td className="px-4 py-3">
-                      <Link href={`/admin/pedidos/${o.id}`} className="block">
+                      <Link href={`/admin/pedidos/${o.id}${volver}`} className="block">
                         <div className="font-semibold">
                           {o.firstName} {o.lastName ?? ""}
                         </div>

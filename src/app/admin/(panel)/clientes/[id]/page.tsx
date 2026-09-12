@@ -36,7 +36,7 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
 
   return (
     <>
-      <PageHeader back={volverA ? { href: `/admin/pedidos/${volverA.id}`, label: `Pedido #${volverA.number}` } : { href: "/admin/clientes", label: "Clientes" }} title={fullName} description={`Cliente desde ${formatDate(user.createdAt)}${user.legacyId ? ` · Woo #${user.legacyId}` : ""}`}>
+      <PageHeader back={volverA ? { href: `/admin/pedidos/${volverA.id}${typeof sp.volver === "string" ? `?volver=${encodeURIComponent(sp.volver)}` : ""}`, label: `Pedido #${volverA.number}` } : { href: "/admin/clientes", label: "Clientes" }} title={fullName} description={`Cliente desde ${formatDate(user.createdAt)}${user.legacyId ? ` · Woo #${user.legacyId}` : ""}`}>
         {wa && (
           <a href={wa} target="_blank" rel="noreferrer" className="btn-lime btn-md">
             <MessageCircle className="size-4" /> WhatsApp
