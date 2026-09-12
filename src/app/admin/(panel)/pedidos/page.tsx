@@ -44,6 +44,8 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       { email: { contains: q, mode: "insensitive" } },
       ...(digits.length >= 6 ? [{ phone: { contains: digits.slice(-8) } }] : []),
       { phone: { contains: q } },
+      // También por el nombre de los autos del pedido: "nissan" trae todos los pedidos con un Nissan
+      { items: { some: { name: { contains: q, mode: "insensitive" } } } },
     ];
   }
   const [orders, total, unidades] = await Promise.all([
@@ -80,7 +82,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       <FilterForm action="/admin/pedidos" className="card mb-4 space-y-2 p-3">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
-          <input type="search" name="q" defaultValue={q} enterKeyHint="search" placeholder="N°, nombre, correo o teléfono" className="input pl-10" />
+          <input type="search" name="q" defaultValue={q} enterKeyHint="search" placeholder="N°, cliente, correo, teléfono o auto" className="input pl-10" />
         </label>
         <CollapsibleFilters active={[estado, canal, desde, hasta].filter(Boolean).length} className="sm:grid-cols-2 lg:grid-cols-4">
         <select name="estado" defaultValue={estado} className="input" aria-label="Estado">
