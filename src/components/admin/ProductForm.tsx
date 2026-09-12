@@ -123,7 +123,8 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
           return;
         }
         setPendingFiles([]);
-        if (!product) router.replace(`/admin/productos/${r.id}?creado=1`);
+        // Al crear se vuelve a la lista, que es desde donde se carga el siguiente auto
+        if (!product) router.replace(`/admin/productos?creado=${r.id}`);
         else {
           setNotice("Cambios guardados");
           router.refresh();

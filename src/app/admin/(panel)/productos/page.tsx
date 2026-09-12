@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Plus, Star, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Search, Plus, Star, Download, Upload, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatCLP, normalizeText, cn } from "@/lib/format";
@@ -40,9 +40,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const etiqueta = str(sp.etiqueta);
   const estado = str(sp.estado);
   const orden = str(sp.orden) || "reciente";
+  const recienCreado = str(sp.creado);
   const page = Math.max(1, parseInt(str(sp.page) || "1", 10) || 1);
 
-  const [tree, allTags] = await Promise.all([getCategoryTree(), getTags()]);
+  const [tree, allTags, creado] = await Promise.all([
+    getCategoryTree(),
+    getTags(),
+    recienCreado ? db.product.findUnique({ where: { id: recienCreado }, select: { id: true, name: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } }) : null,
+  ]);
   const flatCats: { id: string; name: string; depth: number }[] = [];
   for (const r of tree) {
     flatCats.push({ id: r.id, name: r.name, depth: 0 });
@@ -178,6 +183,28 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           ))}
         </div>
       </FilterForm>
+
+      {creado && (
+        <div className="card mb-4 border-l-4 border-lime bg-lime-50/60 p-3">
+          <div className="flex items-center gap-3">
+            <img src={mediaUrl(creado.images[0]?.path, "thumb")} alt="" className="size-14 shrink-0 rounded-lg bg-white object-contain" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-sm font-bold text-lime-700">
+                <CheckCircle2 className="size-4" /> Producto creado
+              </div>
+              <div className="truncate text-sm font-semibold text-ink">{creado.name}</div>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <Link href={`/admin/productos/${creado.id}`} className="btn-outline btn-md">
+              Ver ficha
+            </Link>
+            <Link href="/admin/productos/nuevo" className="btn-lime btn-md">
+              <Plus className="size-4" /> Cargar otro
+            </Link>
+          </div>
+        </div>
+      )}
 
       {products.length === 0 ? (
         <EmptyState title="Sin productos" text="No hay productos con esos filtros. Prueba con otra búsqueda o crea uno nuevo.">
