@@ -17,10 +17,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: u ? [u.name, u.lastName].filter(Boolean).join(" ") || u.email : "Cliente" };
 }
 
-export default async function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function CustomerDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
   const user = await db.user.findUnique({ where: { id } });
   if (!user) notFound();
+  // Si venías de un pedido, el botón de atrás te devuelve a ese pedido
+  const volverA = typeof sp.pedido === "string" && /^[a-z0-9]+$/i.test(sp.pedido) ? await db.order.findUnique({ where: { id: sp.pedido }, select: { id: true, number: true } }) : null;
   const orders = await db.order.findMany({
     where: { OR: [{ userId: user.id }, { email: { equals: user.email, mode: "insensitive" } }] },
     orderBy: { createdAt: "desc" },
@@ -34,7 +36,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   return (
     <>
-      <PageHeader back={{ href: "/admin/clientes", label: "Clientes" }} title={fullName} description={`Cliente desde ${formatDate(user.createdAt)}${user.legacyId ? ` · Woo #${user.legacyId}` : ""}`}>
+      <PageHeader back={volverA ? { href: `/admin/pedidos/${volverA.id}`, label: `Pedido #${volverA.number}` } : { href: "/admin/clientes", label: "Clientes" }} title={fullName} description={`Cliente desde ${formatDate(user.createdAt)}${user.legacyId ? ` · Woo #${user.legacyId}` : ""}`}>
         {wa && (
           <a href={wa} target="_blank" rel="noreferrer" className="btn-lime btn-md">
             <MessageCircle className="size-4" /> WhatsApp

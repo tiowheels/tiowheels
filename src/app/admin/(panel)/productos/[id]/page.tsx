@@ -27,10 +27,13 @@ export default async function EditProductPage({ params, searchParams }: { params
   ]);
   if (!product) notFound();
 
+  // Si venías de un pedido, el botón de atrás te devuelve a ese pedido y no al listado
+  const volverA = typeof sp.pedido === "string" && /^[a-z0-9]+$/i.test(sp.pedido) ? await db.order.findUnique({ where: { id: sp.pedido }, select: { id: true, number: true } }) : null;
+
   return (
     <>
       <PageHeader
-        back={{ href: "/admin/productos", label: "Productos" }}
+        back={volverA ? { href: `/admin/pedidos/${volverA.id}`, label: `Pedido #${volverA.number}` } : { href: "/admin/productos", label: "Productos" }}
         title={
           <span className="flex flex-wrap items-center gap-2">
             <span className="line-clamp-2">{product.name}</span>

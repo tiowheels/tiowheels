@@ -96,7 +96,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-contain" />
                   <div className="min-w-0 flex-1">
                     {it.product ? (
-                      <Link href={`/admin/productos/${it.product.id}`} className="line-clamp-2 text-sm font-semibold hover:underline">
+                      <Link href={`/admin/productos/${it.product.id}?pedido=${order.id}`} className="line-clamp-2 text-sm font-semibold hover:underline">
                         {it.name}
                       </Link>
                     ) : (
@@ -169,7 +169,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
               )}
               {order.user && (
-                <Link href={`/admin/clientes/${order.user.id}`} className="mt-3 inline-block text-xs font-semibold text-ink-500 hover:text-ink">
+                <Link href={`/admin/clientes/${order.user.id}?pedido=${order.id}`} className="mt-3 inline-block text-xs font-semibold text-ink-500 hover:text-ink">
                   Ver ficha del cliente →
                 </Link>
               )}
