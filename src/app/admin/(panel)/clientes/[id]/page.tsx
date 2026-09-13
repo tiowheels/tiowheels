@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MessageCircle, Mail, Phone } from "lucide-react";
+import { MessageCircle, Mail } from "lucide-react";
 import { db } from "@/lib/db";
-import { formatCLP, formatDate, formatDateTime, formatRut } from "@/lib/format";
+import { formatCLP, formatDate, formatDateTime } from "@/lib/format";
 import { regionName } from "@/lib/chile";
 import { whatsappTo } from "@/components/admin/labels";
 import { OrderStatusBadge, ChannelBadge } from "@/components/admin/StatusBadge";
 import { PageHeader } from "@/components/admin/PageHeader";
+import { CustomerForm } from "@/components/admin/CustomerForm";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,6 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
   const spent = valid.reduce((a, o) => a + o.total, 0);
   const fullName = [user.name, user.lastName].filter(Boolean).join(" ") || "Sin nombre";
   const wa = whatsappTo(user.phone, `Hola ${user.name ?? ""}, te escribimos de Tío Wheels.`);
-  const address = [user.address1, user.address2, user.commune, user.city, regionName(user.region)].filter(Boolean).join(", ");
 
   return (
     <>
@@ -49,33 +49,11 @@ export default async function CustomerDetailPage({ params, searchParams }: { par
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="card p-4 md:p-5">
-          <h2 className="mb-3 text-base">Datos</h2>
-          <dl className="space-y-2 text-sm">
-            <div>
-              <dt className="text-xs font-semibold text-ink-500">Correo</dt>
-              <dd className="break-all">{user.email}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold text-ink-500">Teléfono</dt>
-              <dd>
-                {user.phone ? (
-                  <a href={`tel:${user.phone}`} className="inline-flex items-center gap-1 hover:underline">
-                    <Phone className="size-3.5" /> {user.phone}
-                  </a>
-                ) : (
-                  "—"
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold text-ink-500">RUT</dt>
-              <dd>{user.rut ? formatRut(user.rut) : "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold text-ink-500">Dirección</dt>
-              <dd>{address || "—"}</dd>
-            </div>
-          </dl>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-base">Datos</h2>
+            <span className="truncate text-xs text-ink-500">{user.email}</span>
+          </div>
+          <CustomerForm cliente={{ id: user.id, name: user.name, lastName: user.lastName, phone: user.phone, rut: user.rut, address1: user.address1, address2: user.address2, region: user.region, city: user.city }} />
           <div className="mt-4 grid grid-cols-2 gap-2 border-t border-ink-100 pt-4">
             <div>
               <div className="text-xs font-semibold text-ink-500">Pedidos</div>
