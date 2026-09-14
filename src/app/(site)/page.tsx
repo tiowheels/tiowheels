@@ -81,10 +81,9 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-32 bottom-0 size-[420px] rounded-full bg-lime/10 blur-[120px] motion-safe:animate-blob [animation-delay:-6s]" />
         <div className="container-x relative grid items-center gap-10 py-14 md:grid-cols-2 md:items-start md:py-20 lg:py-24">
           <div className="animate-fade-up">
-            <span className="eyebrow !text-lime">Autos a escala 1:64 · Hot Wheels, Matchbox y más</span>
+            <span className="eyebrow !text-lime">Venta de autos a escala</span>
             <h1 className="mt-4 text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
-              {SITE.hero.lines[0]}
-              <RotatingText className="mt-1 min-h-[2.15em] text-lime [perspective:600px]" phrases={["Los mejores modelos aquí", "Adrenalina en miniatura", "Descubre tu próximo favorito", "Premium y Treasure Hunt", "Clásicos de los 90"]} />
+              <RotatingText className="flex min-h-[4.25em] flex-col justify-end [perspective:600px]" blocks={SITE.hero.blocks} />
             </h1>
             <p className="mt-5 max-w-md text-base text-ink-300 sm:text-lg">
               Más de {sections.totalInStock.toLocaleString("es-CL")} modelos disponibles hoy, Hot Wheels, Matchbox y ediciones especiales, con envíos a todo Chile.

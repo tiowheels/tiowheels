@@ -17,12 +17,18 @@ export const SITE = {
     "Ser la marca líder en venta de autos a escala, reconocida por nuestra confianza, cercanía y entrega segura. Queremos que cada cliente, sin importar su edad o experiencia, se sienta respaldado y acompañado por el 'Tío' que siempre sabe lo que hace, creando una comunidad en la que la diversión, la seguridad y la experiencia sean siempre lo primero.",
   benefits: [
     { title: "Envíos a todo Chile", text: "Despachamos por Blue Express o Starken, envío por pagar." },
-    { title: "Más de 3.500 productos", text: "Básicos, premium, tarjetas especiales y ediciones limitadas." },
+    { title: "Más de 3.500 modelos", text: "Básicos, premium, tarjetas especiales y ediciones limitadas." },
     { title: "Ventas 24/7", text: "Compra a cualquier hora, pago seguro en línea." },
     { title: "Atención al cliente", text: "Te acompañamos por WhatsApp antes y después de tu compra." },
   ],
   hero: {
     lines: ["¡Colecciona la emoción!", "Encuentra los mejores modelos aquí", "Velocidad y adrenalina en miniatura", "¡Descubre tu próximo favorito!"],
+    /** El título de la portada va cambiando por bloques de dos líneas. */
+    blocks: [
+      ["¡Colecciona la emoción!", "Envíos a todo Chile"],
+      ["Retiro en Metro El Llano", "Paga con 3 cuotas sin interés"],
+      ["Clásicos", "90's Tarjeta Azul"],
+    ] as const,
   },
 } as const;
 

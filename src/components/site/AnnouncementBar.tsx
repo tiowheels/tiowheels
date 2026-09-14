@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 const MESSAGES = [
   { icon: "🚚", text: "Envíos a todo Chile · envío por pagar al recibir" },
-  { icon: "🏁", text: "Más de 3.500 autos a escala disponibles" },
+  { icon: "🏁", text: "Más de 3.500 modelos de autos a escala" },
   { icon: "⚡", text: "Compra 24/7 · pago seguro con Flow y transferencia" },
   { icon: "🏪", text: "Retiro gratis en Metro El Llano o dirección comercial" },
 ];

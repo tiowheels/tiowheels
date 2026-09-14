@@ -96,7 +96,7 @@ export function SearchBox({ className, autoFocus, onNavigate, variant = "header"
               setActive((a) => Math.max(-1, a - 1));
             } else if (e.key === "Escape") setOpen(false);
           }}
-          placeholder="Busca por modelo, marca o serie… ej: Datsun 510"
+          placeholder="Busca por modelo, marca o serie. Ej: Datsun 510"
           aria-label="Buscar productos"
           autoComplete="off"
           enterKeyHint="search"

@@ -101,7 +101,7 @@ export function ChatBot() {
           >
             <button type="button" onClick={abrir} className="flex items-center gap-1.5 text-left text-[13px] font-bold text-ink">
               <MessageCircle className="size-4 shrink-0 text-lime-700" />
-              Chatea con el Tío Wheels
+              Chatea con Tío Wheels
             </button>
             <button type="button" onClick={ocultarAviso} aria-label="Ocultar el mensaje" className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full text-ink-400 hover:bg-ink-50 hover:text-ink">
               <X className="size-3" />
@@ -129,7 +129,6 @@ export function ChatBot() {
             ) : (
               <>
                 <img src="/brand/tio.png" alt="" className="size-14 object-contain drop-shadow" />
-                <span className="absolute -bottom-1.5 rounded-full bg-ink px-1.5 py-px text-[9px] font-black uppercase tracking-wide text-lime shadow">Chat</span>
               </>
             )}
           </button>
