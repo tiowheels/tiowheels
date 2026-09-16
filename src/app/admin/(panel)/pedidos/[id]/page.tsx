@@ -54,7 +54,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const order = await db.order.findUnique({
     where: { id },
-    include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
+    include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } } } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
   });
   if (!order) notFound();
 
@@ -64,15 +64,17 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   // Líneas que quedaron sin producto: se busca uno del mismo nombre solo para
   // mostrar su foto y poder ir al catálogo. No se guarda ningún vínculo.
   const sueltos = order.items.filter((it) => !it.product).map((it) => it.name);
-  const porNombre = new Map<string, { path: string | null }>();
+  const porNombre = new Map<string, { path: string | null; tags: { id: string; name: string }[] }>();
   if (sueltos.length) {
     const parecidos = await db.product.findMany({
       where: { name: { in: sueltos, mode: "insensitive" } },
-      select: { name: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } },
+      select: { name: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } } },
     });
-    for (const p of parecidos) if (!porNombre.has(p.name.toLowerCase())) porNombre.set(p.name.toLowerCase(), { path: p.images[0]?.path ?? null });
+    for (const p of parecidos) if (!porNombre.has(p.name.toLowerCase())) porNombre.set(p.name.toLowerCase(), { path: p.images[0]?.path ?? null, tags: p.tags });
   }
   const fotoDe = (it: (typeof order.items)[number]) => it.imagePath ?? it.product?.images[0]?.path ?? porNombre.get(it.name.toLowerCase())?.path ?? null;
+  // Las etiquetas son los lotes donde está guardado el auto: ayudan a encontrarlo al preparar el pedido
+  const etiquetasDe = (it: (typeof order.items)[number]) => it.product?.tags ?? porNombre.get(it.name.toLowerCase())?.tags ?? [];
   // Mensaje sugerido según el estado, igual que el botón grande de acciones
   const waCliente = whatsappTo(order.phone, orderWhatsappMessage(order));
 
@@ -121,6 +123,15 @@ export default async function OrderDetailPage({ params, searchParams }: { params
                       {it.quantity} × {formatCLP(it.price)}
                       {it.product ? ` · stock actual ${it.product.stock}` : ""}
                     </div>
+                    {etiquetasDe(it).length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {etiquetasDe(it).map((t) => (
+                          <Link key={t.id} href={`/admin/productos?etiqueta=${t.id}&disp=todos`} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-[11px] font-semibold text-ink-700 hover:bg-ink hover:text-white">
+                            {t.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                     {!it.product && (
                       <Link href={`/admin/productos?q=${encodeURIComponent(it.name)}`} className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-lime-700 hover:underline">
                         <Search className="size-3.5" /> Buscar este auto en el catálogo
