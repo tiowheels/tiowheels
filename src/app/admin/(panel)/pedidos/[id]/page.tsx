@@ -54,7 +54,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const order = await db.order.findUnique({
     where: { id },
-    include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } } } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
+    include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } }, categories: { select: { id: true, name: true, parentId: true } } } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
   });
   if (!order) notFound();
 
@@ -64,17 +64,22 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   // Líneas que quedaron sin producto: se busca uno del mismo nombre solo para
   // mostrar su foto y poder ir al catálogo. No se guarda ningún vínculo.
   const sueltos = order.items.filter((it) => !it.product).map((it) => it.name);
-  const porNombre = new Map<string, { path: string | null; tags: { id: string; name: string }[] }>();
+  const porNombre = new Map<string, { path: string | null; tags: { id: string; name: string }[]; categories: { id: string; name: string; parentId: string | null }[] }>();
   if (sueltos.length) {
     const parecidos = await db.product.findMany({
       where: { name: { in: sueltos, mode: "insensitive" } },
-      select: { name: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } } },
+      select: { name: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } }, tags: { select: { id: true, name: true } }, categories: { select: { id: true, name: true, parentId: true } } },
     });
-    for (const p of parecidos) if (!porNombre.has(p.name.toLowerCase())) porNombre.set(p.name.toLowerCase(), { path: p.images[0]?.path ?? null, tags: p.tags });
+    for (const p of parecidos) if (!porNombre.has(p.name.toLowerCase())) porNombre.set(p.name.toLowerCase(), { path: p.images[0]?.path ?? null, tags: p.tags, categories: p.categories });
   }
   const fotoDe = (it: (typeof order.items)[number]) => it.imagePath ?? it.product?.images[0]?.path ?? porNombre.get(it.name.toLowerCase())?.path ?? null;
   // Las etiquetas son los lotes donde está guardado el auto: ayudan a encontrarlo al preparar el pedido
   const etiquetasDe = (it: (typeof order.items)[number]) => it.product?.tags ?? porNombre.get(it.name.toLowerCase())?.tags ?? [];
+  // Primero las subcategorías (la marca del auto), que dicen más que "Japoneses"
+  const categoriasDe = (it: (typeof order.items)[number]) => {
+    const cats = it.product?.categories ?? porNombre.get(it.name.toLowerCase())?.categories ?? [];
+    return [...cats].sort((a, b) => Number(Boolean(b.parentId)) - Number(Boolean(a.parentId))).slice(0, 3);
+  };
   // Mensaje sugerido según el estado, igual que el botón grande de acciones
   const waCliente = whatsappTo(order.phone, orderWhatsappMessage(order));
 
@@ -123,8 +128,13 @@ export default async function OrderDetailPage({ params, searchParams }: { params
                       {it.quantity} × {formatCLP(it.price)}
                       {it.product ? ` · stock actual ${it.product.stock}` : ""}
                     </div>
-                    {etiquetasDe(it).length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
+                    {(categoriasDe(it).length > 0 || etiquetasDe(it).length > 0) && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        {categoriasDe(it).map((c) => (
+                          <Link key={c.id} href={`/admin/productos?cat=${c.id}&disp=todos`} className="rounded-md border border-ink-200 px-1.5 py-0.5 text-[11px] font-semibold text-ink-600 hover:border-ink hover:text-ink">
+                            {c.name}
+                          </Link>
+                        ))}
                         {etiquetasDe(it).map((t) => (
                           <Link key={t.id} href={`/admin/productos?etiqueta=${t.id}&disp=todos`} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-[11px] font-semibold text-ink-700 hover:bg-ink hover:text-white">
                             {t.name}
