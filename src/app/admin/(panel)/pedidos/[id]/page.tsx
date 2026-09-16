@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Truck, Phone } from "lucide-react";
+import { Truck, Phone, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatCLP, formatDateTime, formatRut } from "@/lib/format";
 import { mediaUrl } from "@/lib/media-url";
@@ -60,6 +60,19 @@ export default async function OrderDetailPage({ params, searchParams }: { params
 
   const address = [order.address1, order.address2, order.commune, order.city, regionName(order.region)].filter(Boolean).join(", ");
   const isLegacy = order.channel.startsWith("LEGACY");
+
+  // Líneas que quedaron sin producto: se busca uno del mismo nombre solo para
+  // mostrar su foto y poder ir al catálogo. No se guarda ningún vínculo.
+  const sueltos = order.items.filter((it) => !it.product).map((it) => it.name);
+  const porNombre = new Map<string, { path: string | null }>();
+  if (sueltos.length) {
+    const parecidos = await db.product.findMany({
+      where: { name: { in: sueltos, mode: "insensitive" } },
+      select: { name: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } },
+    });
+    for (const p of parecidos) if (!porNombre.has(p.name.toLowerCase())) porNombre.set(p.name.toLowerCase(), { path: p.images[0]?.path ?? null });
+  }
+  const fotoDe = (it: (typeof order.items)[number]) => it.imagePath ?? it.product?.images[0]?.path ?? porNombre.get(it.name.toLowerCase())?.path ?? null;
   // Mensaje sugerido según el estado, igual que el botón grande de acciones
   const waCliente = whatsappTo(order.phone, orderWhatsappMessage(order));
 
@@ -95,7 +108,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
               {order.items.map((it) => (
                 <li key={it.id} className="flex items-center gap-3 px-4 py-3">
                   {/* Los pedidos migrados no guardaron la foto, así que se toma la del producto */}
-                  <img src={mediaUrl(it.imagePath ?? it.product?.images[0]?.path, "thumb")} alt="" className="size-20 shrink-0 rounded-xl bg-ink-50 object-contain" />
+                  <img src={mediaUrl(fotoDe(it), "thumb")} alt="" className="size-20 shrink-0 rounded-xl bg-ink-50 object-contain" />
                   <div className="min-w-0 flex-1">
                     {it.product ? (
                       <Link href={`/admin/productos/${it.product.id}?pedido=${order.id}${sp.volver ? `&volver=${encodeURIComponent(String(sp.volver))}` : ""}`} className="line-clamp-2 text-sm font-semibold hover:underline">
@@ -106,8 +119,13 @@ export default async function OrderDetailPage({ params, searchParams }: { params
                     )}
                     <div className="text-xs text-ink-500">
                       {it.quantity} × {formatCLP(it.price)}
-                      {it.product ? ` · stock actual ${it.product.stock}` : " · producto no vinculado"}
+                      {it.product ? ` · stock actual ${it.product.stock}` : ""}
                     </div>
+                    {!it.product && (
+                      <Link href={`/admin/productos?q=${encodeURIComponent(it.name)}`} className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-lime-700 hover:underline">
+                        <Search className="size-3.5" /> Buscar este auto en el catálogo
+                      </Link>
+                    )}
                   </div>
                   <div className="text-sm font-bold tabular-nums">{formatCLP(it.total)}</div>
                 </li>
