@@ -54,7 +54,7 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const order = await db.order.findUnique({
     where: { id },
-    include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
+    include: { items: { orderBy: { name: "asc" }, include: { product: { select: { id: true, slug: true, stock: true, images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } } } }, payments: { orderBy: { createdAt: "asc" } }, user: { select: { id: true, name: true, lastName: true, email: true } } },
   });
   if (!order) notFound();
 
@@ -94,7 +94,8 @@ export default async function OrderDetailPage({ params, searchParams }: { params
             <ul className="divide-y divide-ink-100">
               {order.items.map((it) => (
                 <li key={it.id} className="flex items-center gap-3 px-4 py-3">
-                  <img src={mediaUrl(it.imagePath, "thumb")} alt="" className="size-14 shrink-0 rounded-lg bg-ink-50 object-contain" />
+                  {/* Los pedidos migrados no guardaron la foto, así que se toma la del producto */}
+                  <img src={mediaUrl(it.imagePath ?? it.product?.images[0]?.path, "thumb")} alt="" className="size-20 shrink-0 rounded-xl bg-ink-50 object-contain" />
                   <div className="min-w-0 flex-1">
                     {it.product ? (
                       <Link href={`/admin/productos/${it.product.id}?pedido=${order.id}${sp.volver ? `&volver=${encodeURIComponent(String(sp.volver))}` : ""}`} className="line-clamp-2 text-sm font-semibold hover:underline">

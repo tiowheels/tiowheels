@@ -115,7 +115,8 @@ export class OrderError extends Error {
 /* ------------------------------------------------------------------ */
 
 export const orderInclude = {
-  items: { orderBy: { id: "asc" } },
+  // La foto del producto sirve de respaldo: los pedidos migrados no guardaron la suya
+  items: { orderBy: { id: "asc" }, include: { product: { select: { images: { orderBy: { position: "asc" }, take: 1, select: { path: true } } } } } },
   payments: { orderBy: { createdAt: "desc" } },
 } satisfies Prisma.OrderInclude;
 
@@ -437,7 +438,7 @@ export function orderEmailHtml(order: OrderWithItems, store: StoreSettings, opts
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #ececec;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-            <td style="padding-right:12px;"><img src="${SITE.url}${mediaUrl(it.imagePath, "thumb")}" width="56" height="56" alt="" style="display:block;border-radius:10px;background:#f5f5f5;object-fit:cover;"></td>
+            <td style="padding-right:12px;"><img src="${SITE.url}${mediaUrl(it.imagePath ?? it.product?.images[0]?.path, "thumb")}" width="56" height="56" alt="" style="display:block;border-radius:10px;background:#f5f5f5;object-fit:cover;"></td>
             <td style="font-size:14px;color:#0a0a0a;line-height:1.35;"><strong>${esc(it.name)}</strong><br><span style="color:#737373;font-size:13px;">${it.quantity} × ${formatCLP(it.price)}</span></td>
           </tr></table>
         </td>
