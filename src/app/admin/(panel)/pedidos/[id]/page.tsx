@@ -78,7 +78,17 @@ export default async function OrderDetailPage({ params, searchParams }: { params
   // Primero las subcategorías (la marca del auto), que dicen más que "Japoneses"
   const categoriasDe = (it: (typeof order.items)[number]) => {
     const cats = it.product?.categories ?? porNombre.get(it.name.toLowerCase())?.categories ?? [];
-    return [...cats].sort((a, b) => Number(Boolean(b.parentId)) - Number(Boolean(a.parentId))).slice(0, 3);
+    // "Toyota" existe bajo Japoneses y bajo Camionetas: se muestra una sola vez
+    const vistas = new Set<string>();
+    return [...cats]
+      .sort((a, b) => Number(Boolean(b.parentId)) - Number(Boolean(a.parentId)))
+      .filter((c) => {
+        const clave = c.name.toLowerCase();
+        if (vistas.has(clave)) return false;
+        vistas.add(clave);
+        return true;
+      })
+      .slice(0, 3);
   };
   // Mensaje sugerido según el estado, igual que el botón grande de acciones
   const waCliente = whatsappTo(order.phone, orderWhatsappMessage(order));
