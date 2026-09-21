@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { publicOrigin } from "@/lib/public-origin";
 
 /**
  * Chequeo optimista de sesión para /admin y /cuenta.
@@ -21,15 +22,15 @@ export async function proxy(req: NextRequest) {
 
   if (pathname.startsWith("/admin")) {
     if (pathname === "/admin/login") {
-      if (payload?.role === "ADMIN") return NextResponse.redirect(new URL("/admin", req.url));
+      if (payload?.role === "ADMIN") return NextResponse.redirect(new URL("/admin", publicOrigin(req)));
       return NextResponse.next();
     }
-    if (payload?.role !== "ADMIN") return NextResponse.redirect(new URL("/admin/login", req.url));
+    if (payload?.role !== "ADMIN") return NextResponse.redirect(new URL("/admin/login", publicOrigin(req)));
   }
 
   if (pathname.startsWith("/cuenta") && !["/cuenta/ingresar", "/cuenta/registro", "/cuenta/recuperar"].some((p) => pathname.startsWith(p))) {
     if (!payload) {
-      const url = new URL("/cuenta/ingresar", req.url);
+      const url = new URL("/cuenta/ingresar", publicOrigin(req));
       url.searchParams.set("next", pathname);
       return NextResponse.redirect(url);
     }

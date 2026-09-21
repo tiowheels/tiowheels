@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { rememberOrderOnResponse } from "@/lib/order-access";
 import { syncFlowPayment } from "@/lib/orders";
+import { publicOrigin } from "@/lib/public-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -19,18 +20,18 @@ export async function GET(req: NextRequest) {
 
 async function handle(req: NextRequest) {
   const token = await readToken(req);
-  if (!token) return NextResponse.redirect(new URL("/carrito", req.nextUrl.origin), 303);
+  if (!token) return NextResponse.redirect(new URL("/carrito", publicOrigin(req)), 303);
 
   try {
     const result = await syncFlowPayment(token);
-    if (!result.orderId) return NextResponse.redirect(new URL("/carrito", req.nextUrl.origin), 303);
+    if (!result.orderId) return NextResponse.redirect(new URL("/carrito", publicOrigin(req)), 303);
     const pago = result.outcome === "paid" ? "ok" : result.outcome === "rejected" ? "rechazado" : "pendiente";
-    const res = NextResponse.redirect(new URL(`/pedido/${result.orderId}?pago=${pago}`, req.nextUrl.origin), 303);
+    const res = NextResponse.redirect(new URL(`/pedido/${result.orderId}?pago=${pago}`, publicOrigin(req)), 303);
     // El cliente vuelve desde Flow (a veces en otra pestaña o navegador in-app): recordamos el pedido en este navegador.
     return rememberOrderOnResponse(req, res, result.orderId);
   } catch (err) {
     console.error("[flow/return] error", err);
-    return NextResponse.redirect(new URL("/carrito", req.nextUrl.origin), 303);
+    return NextResponse.redirect(new URL("/carrito", publicOrigin(req)), 303);
   }
 }
 
