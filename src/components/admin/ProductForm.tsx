@@ -47,6 +47,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set(product?.categoryIds ?? []));
   const [catQuery, setCatQuery] = useState("");
   const [zoom, setZoom] = useState<string | null>(null);
+  const [tagCount, setTagCount] = useState(product?.tagNames.length ?? 0);
 
   // Las elegidas se muestran arriba como chips, para no perderlas de vista al buscar
   const catsElegidas = useMemo(() => {
@@ -148,6 +149,10 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
       router.refresh();
     });
   }
+
+  // El servidor lo exige igual; aquí se avisa antes para no perder el viaje
+  const [estado, setEstado] = useState(product?.status ?? "ACTIVE");
+  const faltaParaPublicar = estado === "ACTIVE" && (selectedCats.size === 0 || tagCount === 0);
 
   const toggleCat = (id: string) =>
     setSelectedCats((s) => {
@@ -299,7 +304,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
             <label htmlFor="status" className="label">
               Estado
             </label>
-            <select id="status" name="status" defaultValue={product?.status ?? "ACTIVE"} className="input">
+            <select id="status" name="status" value={estado} onChange={(e) => setEstado(e.target.value as typeof estado)} className="input">
               <option value="ACTIVE">Activo (visible en la tienda)</option>
               <option value="DRAFT">Borrador (oculto)</option>
               <option value="ARCHIVED">Archivado</option>
@@ -372,7 +377,7 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
         {/* Etiquetas */}
         <section className="card p-4 md:p-5">
           <h2 className="mb-2 text-base">Etiquetas</h2>
-          <TagInput initial={product?.tagNames ?? []} suggestions={tags} />
+          <TagInput initial={product?.tagNames ?? []} suggestions={tags} onChange={setTagCount} />
         </section>
 
         {/* Guardar */}
@@ -383,6 +388,13 @@ export function ProductForm({ product, categories, tags = [], duplicated }: { pr
             </p>
           )}
           {notice && !error && <p className="rounded-xl bg-success/10 px-4 py-3 text-sm font-medium text-success">{notice}</p>}
+          {faltaParaPublicar && (
+            <p className="rounded-xl bg-flame/15 px-4 py-3 text-sm font-medium text-[#9a5a0a]">
+              Para publicarlo falta {selectedCats.size === 0 ? "elegir una categoría" : ""}
+              {selectedCats.size === 0 && tagCount === 0 ? " y " : ""}
+              {tagCount === 0 ? "elegir una etiqueta (la caja donde lo guardas)" : ""}. También puedes dejarlo como borrador.
+            </p>
+          )}
           <button type="submit" disabled={pending || preparando} className="btn-lime btn-lg w-full shadow-pop">
             {pending ? <Loader2 className="size-5 animate-spin" /> : <Save className="size-5" />}
             {pending ? "Guardando…" : product ? "Guardar cambios" : "Crear producto"}

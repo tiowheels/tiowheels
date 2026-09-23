@@ -9,16 +9,22 @@ import ExcelJS from "exceljs";
 
 export const dynamic = "force-dynamic";
 
-export const CSV_HEADERS = ["codigo", "nombre", "slug", "marca", "precio", "precio_anterior", "stock", "estado", "destacado", "descripcion", "categorias", "etiquetas", "vendidos", "imagenes"] as const;
+export const CSV_HEADERS = ["codigo", "nombre", "slug", "marca", "precio", "precio_anterior", "stock", "estado", "destacado", "descripcion", "categorias", "etiquetas", "vendidos", "publicado", "imagenes"] as const;
 
 /** Encabezados en bonito para la planilla de Excel. */
-const TITULOS = ["Código", "Nombre", "Dirección web", "Marca", "Precio", "Precio anterior", "Stock", "Estado", "Destacado", "Descripción", "Categorías", "Etiquetas", "Vendidos", "Imágenes"] as const;
+const TITULOS = ["Código", "Nombre", "Dirección web", "Marca", "Precio", "Precio anterior", "Stock", "Estado", "Destacado", "Descripción", "Categorías", "Etiquetas", "Vendidos", "Publicado", "Imágenes"] as const;
 
 /**
  * Exporta el catálogo respetando los filtros de la lista del panel.
  *   GET /admin/api/productos/export?q=&cat=&estado=&disp=&etiqueta=          → CSV
  *   GET /admin/api/productos/export?formato=excel&…                          → Excel (.xlsx)
  */
+/** Fecha en formato chileno, que es como se lee en Excel. */
+function fechaCorta(d: Date | null) {
+  if (!d) return "";
+  return new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Santiago" }).format(d);
+}
+
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user || user.role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -41,7 +47,7 @@ export async function GET(req: NextRequest) {
     conds.push(Prisma.sql`(p."searchText" ILIKE ${"%" + t + "%"} OR p."name" ILIKE ${"%" + t + "%"})`);
   }
   const where = conds.length ? Prisma.join(conds, " AND ") : Prisma.sql`TRUE`;
-  const rows = await db.$queryRaw<{ id: string }[]>`SELECT p."id" FROM "Product" p WHERE ${where} ORDER BY p."name" ASC`;
+  const rows = await db.$queryRaw<{ id: string }[]>`SELECT p."id" FROM "Product" p WHERE ${where} ORDER BY p."listedAt" DESC NULLS LAST, p."createdAt" DESC`;
   const ids = rows.map((r) => r.id);
 
   const salida: (string | number | null)[][] = [];
@@ -50,7 +56,7 @@ export async function GET(req: NextRequest) {
     const productos = await db.product.findMany({
       where: { id: { in: ids.slice(i, i + LOTE) } },
       select: {
-        id: true, legacyId: true, name: true, slug: true, brand: true, price: true, compareAtPrice: true, stock: true, status: true, featured: true, description: true, totalSales: true,
+        id: true, legacyId: true, name: true, slug: true, brand: true, price: true, compareAtPrice: true, stock: true, status: true, featured: true, description: true, totalSales: true, listedAt: true, createdAt: true,
         categories: { select: { name: true } },
         tags: { select: { name: true } },
         images: { orderBy: { position: "asc" }, select: { path: true } },
@@ -74,6 +80,7 @@ export async function GET(req: NextRequest) {
         p.categories.map((c) => c.name).join(" | "),
         p.tags.map((t) => t.name).join(" | "),
         p.totalSales,
+        fechaCorta(p.listedAt ?? p.createdAt),
         p.images.map((im) => mediaUrl(im.path, "large")).join(" | "),
       ]);
     }
@@ -123,7 +130,8 @@ async function construirExcel(filas: (string | number | null)[][]) {
     { header: TITULOS[10], key: "categorias", width: 34 },
     { header: TITULOS[11], key: "etiquetas", width: 22 },
     { header: TITULOS[12], key: "vendidos", width: 10 },
-    { header: TITULOS[13], key: "imagenes", width: 60 },
+    { header: TITULOS[13], key: "publicado", width: 13 },
+    { header: TITULOS[14], key: "imagenes", width: 60 },
   ];
 
   const cabecera = hoja.getRow(1);

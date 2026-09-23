@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Plus, Search } from "lucide-react";
 import { normalizeText } from "@/lib/format";
 
@@ -10,10 +10,11 @@ import { normalizeText } from "@/lib/format";
  * Si lo escrito no existe todavía, el mismo campo permite crear la etiqueta.
  * Envía un input oculto `tagNames` por cada etiqueta.
  */
-export function TagInput({ name = "tagNames", initial = [], suggestions = [] }: { name?: string; initial?: string[]; suggestions?: { name: string; count: number }[] }) {
+export function TagInput({ name = "tagNames", initial = [], suggestions = [], onChange }: { name?: string; initial?: string[]; suggestions?: { name: string; count: number }[]; onChange?: (cuantas: number) => void }) {
   const [tags, setTags] = useState<string[]>(initial);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const onChangeRef = useRef(onChange);
 
   function add(raw: string) {
     const parts = raw
@@ -38,6 +39,14 @@ export function TagInput({ name = "tagNames", initial = [], suggestions = [] }: 
   function remove(tag: string) {
     setTags((prev) => prev.filter((t) => t !== tag));
   }
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+
+  useEffect(() => {
+    onChangeRef.current?.(tags.length);
+  }, [tags]);
 
   const q = normalizeText(query);
   const visibles = useMemo(() => {

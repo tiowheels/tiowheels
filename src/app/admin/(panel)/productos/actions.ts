@@ -134,6 +134,12 @@ export async function saveProduct(formData: FormData): Promise<{ ok: true; id: s
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revisa los datos del formulario" };
   const d = parsed.data;
+  // Sin categoría ni etiqueta, después no se sabe dónde quedó guardado el auto.
+  // Como borrador se puede guardar incompleto; para publicarlo no.
+  if (d.status === "ACTIVE") {
+    if (!d.categoryIds.length) return { ok: false, error: "Elige al menos una categoría para publicarlo. Si aún no la tienes, guárdalo como borrador." };
+    if (!d.tagNames.length) return { ok: false, error: "Elige al menos una etiqueta: es la caja donde queda guardado el auto. Si aún no la tienes, guárdalo como borrador." };
+  }
   // Si el formulario no manda marca (ya no la pide), se deduce de la categoría
   const brand = formData.get("brand") !== null ? d.brand || null : await marcaSegunCategorias(d.categoryIds, id);
   const base = slugify(d.slug || d.name);
