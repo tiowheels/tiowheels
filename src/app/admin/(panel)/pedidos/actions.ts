@@ -27,8 +27,14 @@ export async function updateOrderStatus(input: { id: string; status: OrderStatus
   if (!parsed.success) return { ok: false, error: "Estado inválido" };
   const { id, status } = parsed.data;
   if (status === "CANCELLED") return cancelOrder({ id, restock: true });
-  const order = await db.order.findUnique({ where: { id }, select: { status: true, paymentStatus: true, shippedAt: true, email: true } });
+  const order = await db.order.findUnique({
+    where: { id },
+    select: { status: true, paymentStatus: true, shippedAt: true, email: true, items: { select: { productId: true, quantity: true, name: true } } },
+  });
   if (!order) return { ok: false, error: "Pedido no encontrado" };
+  // Al cancelar se devolvió el stock; si el pedido revive hay que volver a descontarlo,
+  // si no el catálogo queda con unidades que ya están vendidas.
+  const revive = order.status === "CANCELLED" && status !== "REFUNDED";
   const data: { status: OrderStatus; paymentStatus?: "PAID" | "REFUNDED"; paidAt?: Date; shippedAt?: Date } = { status };
   // Estados "posteriores al pago" implican pago recibido
   if (["PAID", "PROCESSING", "SHIPPED", "COMPLETED"].includes(status) && order.paymentStatus !== "PAID") {
@@ -37,7 +43,21 @@ export async function updateOrderStatus(input: { id: string; status: OrderStatus
   }
   if (status === "REFUNDED") data.paymentStatus = "REFUNDED";
   if (status === "SHIPPED" && !order.shippedAt) data.shippedAt = new Date();
-  await db.order.update({ where: { id }, data });
+  const sinStock: string[] = [];
+  await db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id }, data });
+    if (!revive) return;
+    for (const it of order.items) {
+      if (!it.productId) continue;
+      const p = await tx.product.update({
+        where: { id: it.productId },
+        data: { stock: { decrement: it.quantity }, totalSales: { increment: it.quantity } },
+        select: { name: true, stock: true },
+      });
+      if (p.stock < 0) sinStock.push(`${p.name} (queda en ${p.stock})`);
+    }
+  });
+  if (revive) revalidatePath("/admin/productos");
 
   // Avisos al cliente (solo si hay email; sendMail no falla sin SMTP).
   let notice = "";
@@ -51,7 +71,8 @@ export async function updateOrderStatus(input: { id: string; status: OrderStatus
     }
   }
   revalidateOrder(id);
-  return { ok: true, message: `Estado actualizado${notice}` };
+  if (sinStock.length) return { ok: true, message: `Estado actualizado${notice}. Ojo: quedó sin stock ${sinStock.join(", ")}` };
+  return { ok: true, message: `Estado actualizado${notice}${revive ? " y el stock se volvió a descontar" : ""}` };
 }
 
 const shipSchema = z.object({
