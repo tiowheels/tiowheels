@@ -614,20 +614,42 @@ export async function sendDeliveredEmail(orderOrId: string | OrderWithItems) {
   try {
     const order = typeof orderOrId === "string" ? await db.order.findUnique({ where: { id: orderOrId }, include: orderInclude }) : orderOrId;
     if (!order?.email) return;
-    const title = `Tu pedido #${order.number} fue entregado`;
+
+    // Cristóbal cierra el pedido cuando lo tiene preparado, antes de que llegue al
+    // cliente, así que el correo no puede decir que ya fue entregado.
+    const esRetiro = order.shippingMethod === ShippingMethod.PICKUP;
+    const esEnvio = order.shippingMethod === ShippingMethod.DELIVERY_COD;
+    const title = esEnvio
+      ? `Tu pedido #${order.number} está listo para ser enviado`
+      : esRetiro
+        ? `Tu pedido #${order.number} está listo para ser entregado`
+        : `Tu pedido #${order.number} fue entregado`;
+    const saludo = esEnvio
+      ? `Hola ${esc(order.firstName)}, tu pedido ya está preparado y listo para salir. Te avisamos apenas lo despachemos con el número de seguimiento.`
+      : esRetiro
+        ? `Hola ${esc(order.firstName)}, tu pedido ya está preparado y listo para que lo retires. Coordinamos día y hora por WhatsApp.`
+        : `Hola ${esc(order.firstName)}, tu pedido fue entregado. ¡Gracias por comprar en ${esc(SITE.name)}!`;
+    const cierre = esEnvio || esRetiro ? "Cualquier duda, respóndenos este correo o escríbenos por WhatsApp." : "Si algo no llegó como esperabas, respóndenos este correo o escríbenos por WhatsApp y lo resolvemos.";
+
     const body = `
           <div style="${EMAIL_EYEBROW}">Pedido #${order.number}</div>
           <h1 style="margin:8px 0 12px;font-size:22px;line-height:1.2;">${esc(title)}</h1>
-          <p style="margin:0;font-size:15px;line-height:1.55;color:#262626;">Hola ${esc(order.firstName)}, tu pedido fue entregado. ¡Gracias por comprar en ${esc(SITE.name)}!</p>
-          <p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#262626;">Si algo no llegó como esperabas, respóndenos este correo o escríbenos por WhatsApp y lo resolvemos.</p>
+          <p style="margin:0;font-size:15px;line-height:1.55;color:#262626;">${saludo}</p>
+          ${esRetiro ? `<p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#262626;">Retiro en <strong>Metro El Llano</strong> o en nuestra dirección comercial.</p>` : ""}
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.55;color:#262626;">${cierre}</p>
           <div style="margin-top:26px;text-align:center;">
             ${emailButton(SITE.instagram, "Síguenos en Instagram")}
             <p style="margin:16px 0 0;font-size:12px;color:#737373;">Comparte tu colección y etiquétanos · ${EMAIL_HELP}</p>
           </div>`;
-    const text = `Hola ${order.firstName}, tu pedido #${order.number} fue entregado. ¡Gracias por comprar en ${SITE.name}!\n\nSíguenos en Instagram: ${SITE.instagram}\nVer pedido: ${SITE.url}/pedido/${order.id}`;
+    const textoPlano = esEnvio
+      ? `Hola ${order.firstName}, tu pedido #${order.number} está listo para ser enviado. Te avisamos apenas lo despachemos con el número de seguimiento.`
+      : esRetiro
+        ? `Hola ${order.firstName}, tu pedido #${order.number} está listo para ser entregado. Retiro en Metro El Llano o en nuestra dirección comercial; coordinamos por WhatsApp.`
+        : `Hola ${order.firstName}, tu pedido #${order.number} fue entregado. ¡Gracias por comprar en ${SITE.name}!`;
+    const text = `${textoPlano}\n\nSíguenos en Instagram: ${SITE.instagram}\nVer pedido: ${SITE.url}/pedido/${order.id}`;
     await sendMail({ to: order.email, subject: `${title} · ${SITE.name}`, html: emailShell(title, body), text });
   } catch (err) {
-    console.error("[orders] error enviando correo de entrega", err);
+    console.error("[orders] error enviando correo de cierre", err);
   }
 }
 

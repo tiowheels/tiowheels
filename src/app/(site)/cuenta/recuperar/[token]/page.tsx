@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { hashResetToken } from "@/lib/reset-token";
 import { AuthCard } from "../../_components/AuthCard";
 import { ResetForm } from "./ResetForm";
 
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ResetPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const row = await db.passwordResetToken.findUnique({ where: { token }, include: { user: { select: { email: true, name: true } } } });
+  // En la base el token está cifrado; buscarlo en claro nunca calzaba y todos los enlaces salían vencidos
+  const row = await db.passwordResetToken.findUnique({ where: { token: hashResetToken(token) }, include: { user: { select: { email: true, name: true } } } });
   const valid = Boolean(row && row.expiresAt > new Date());
 
   if (!valid) {

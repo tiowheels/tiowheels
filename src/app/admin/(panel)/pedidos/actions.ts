@@ -67,7 +67,7 @@ export async function updateOrderStatus(input: { id: string; status: OrderStatus
       notice = " y aviso enviado al cliente";
     } else if (status === "COMPLETED") {
       after(() => sendDeliveredEmail(id));
-      notice = " y correo de agradecimiento enviado";
+      notice = " y aviso enviado al cliente";
     }
   }
   revalidateOrder(id);

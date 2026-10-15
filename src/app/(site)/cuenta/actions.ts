@@ -2,7 +2,7 @@
 
 import { after } from "next/server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import { formatRut, validateRut } from "@/lib/format";
 import { REGION_BY_CODE } from "@/lib/chile";
 import { sendMail } from "@/lib/mail";
 import { SITE } from "@/lib/site";
+import { hashResetToken } from "@/lib/reset-token";
 
 export type FormState = { ok: boolean; message?: string; field?: string; migrated?: boolean; email?: string } | null;
 
@@ -112,10 +113,6 @@ export async function register(_prev: FormState, formData: FormData): Promise<Fo
 
 const RESET_TTL_MS = 60 * 60 * 1000; // 1 hora
 
-function hashToken(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
-
 export async function requestPasswordReset(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = z.object({ email }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return firstIssue(parsed.error);
@@ -132,7 +129,7 @@ export async function requestPasswordReset(_prev: FormState, formData: FormData)
     // Se guarda solo el hash: si alguien lee la BD no puede usar los enlaces.
     await db.$transaction([
       db.passwordResetToken.deleteMany({ where: { userId: user.id } }),
-      db.passwordResetToken.create({ data: { userId: user.id, token: hashToken(token), expiresAt: new Date(Date.now() + RESET_TTL_MS) } }),
+      db.passwordResetToken.create({ data: { userId: user.id, token: hashResetToken(token), expiresAt: new Date(Date.now() + RESET_TTL_MS) } }),
     ]);
     const link = `${SITE.url}/cuenta/recuperar/${token}`;
     if (process.env.NODE_ENV !== "production") console.info(`[auth] enlace de recuperación para ${mail}: ${link}`);
@@ -176,7 +173,7 @@ export async function resetPassword(_prev: FormState, formData: FormData): Promi
   const guard = rateLimit(`reset:use:${await clientIp()}`, 10, 15 * 60);
   if (!guard.ok) return { ok: false, message: retryMessage(guard) };
 
-  const row = await db.passwordResetToken.findUnique({ where: { token: hashToken(token) }, include: { user: true } });
+  const row = await db.passwordResetToken.findUnique({ where: { token: hashResetToken(token) }, include: { user: true } });
   if (!row || row.expiresAt < new Date()) {
     return { ok: false, message: "El enlace no es válido o ya venció. Pide uno nuevo." };
   }
