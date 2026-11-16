@@ -192,3 +192,109 @@ export async function deleteOrder(input: { id: string; restock?: boolean }): Pro
   revalidatePath("/");
   return { ok: true, message: restock && descontaba ? `Pedido #${order.number} eliminado y stock repuesto` : `Pedido #${order.number} eliminado` };
 }
+
+/* ---------- Edición del pedido ---------- */
+
+const editarItemsSchema = z.object({
+  id: z.string().min(1),
+  items: z.array(z.object({ id: z.string().min(1), quantity: z.number().int().min(0).max(999) })).min(1),
+});
+
+/**
+ * Cambia cantidades o quita autos de un pedido. Si el pedido tiene el stock tomado
+ * (cualquier estado menos cancelado), lo que se quita vuelve al catálogo y lo que
+ * se agrega se descuenta. Recalcula subtotal y total.
+ */
+export async function updateOrderItems(input: { id: string; items: { id: string; quantity: number }[] }): Promise<ActionResult> {
+  await requireAdmin();
+  const parsed = editarItemsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Cantidades inválidas" };
+  const { id, items } = parsed.data;
+  const nuevas = new Map(items.map((i) => [i.id, i.quantity]));
+
+  try {
+    const cambios = await db.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { id }, select: { status: true, discount: true, shippingCost: true, adminNote: true, items: { select: { id: true, productId: true, name: true, price: true, quantity: true } } } });
+      if (!order) throw new Error("Pedido no encontrado");
+      const tomaStock = order.status !== "CANCELLED";
+      const finales = order.items.map((it) => ({ ...it, nueva: nuevas.get(it.id) ?? it.quantity }));
+      if (finales.every((f) => f.nueva === 0)) throw new Error("El pedido no puede quedar sin autos. Si no va, cancélalo.");
+
+      const notas: string[] = [];
+      for (const f of finales) {
+        const delta = f.nueva - f.quantity;
+        if (delta === 0) continue;
+        if (tomaStock && f.productId) {
+          if (delta > 0) {
+            const r = await tx.product.updateMany({ where: { id: f.productId, stock: { gte: delta } }, data: { stock: { decrement: delta }, totalSales: { increment: delta } } });
+            if (r.count !== 1) throw new Error(`No hay stock suficiente de "${f.name}" para subir la cantidad`);
+          } else {
+            await tx.product.update({ where: { id: f.productId }, data: { stock: { increment: -delta }, totalSales: { decrement: -delta } } });
+          }
+        }
+        if (f.nueva === 0) await tx.orderItem.delete({ where: { id: f.id } });
+        else await tx.orderItem.update({ where: { id: f.id }, data: { quantity: f.nueva, total: f.price * f.nueva } });
+        notas.push(f.nueva === 0 ? `se quitó ${f.name}` : `${f.name}: ${f.quantity} → ${f.nueva}`);
+      }
+      if (!notas.length) return 0;
+
+      const subtotal = finales.reduce((a, f) => a + f.price * f.nueva, 0);
+      const discount = Math.min(order.discount, subtotal);
+      const fecha = new Intl.DateTimeFormat("es-CL", { day: "2-digit", month: "2-digit", timeZone: "America/Santiago" }).format(new Date());
+      const nota = `Editado el ${fecha}: ${notas.join("; ")}.`;
+      await tx.order.update({ where: { id }, data: { subtotal, discount, total: subtotal - discount + order.shippingCost, adminNote: order.adminNote ? `${order.adminNote}\n${nota}` : nota } });
+      return notas.length;
+    });
+    revalidateOrder(id);
+    revalidatePath("/admin/productos");
+    return { ok: true, message: cambios ? "Pedido actualizado y stock ajustado" : "Sin cambios" };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo editar el pedido" };
+  }
+}
+
+const editarClienteSchema = z.object({
+  id: z.string().min(1),
+  firstName: z.string().trim().min(1, "Falta el nombre").max(80),
+  lastName: z.string().trim().max(80).optional().default(""),
+  email: z.string().trim().max(160).optional().default(""),
+  phone: z.string().trim().max(30).optional().default(""),
+  rut: z.string().trim().max(20).optional().default(""),
+  address1: z.string().trim().max(200).optional().default(""),
+  address2: z.string().trim().max(120).optional().default(""),
+  commune: z.string().trim().max(120).optional().default(""),
+  region: z.string().trim().max(10).optional().default(""),
+  shippingMethod: z.enum(["DELIVERY_COD", "PICKUP", "NONE"]),
+});
+
+/** Corrige los datos del cliente y de entrega guardados en el pedido. */
+export async function updateOrderCustomer(formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const parsed = editarClienteSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Revisa los datos" };
+  const d = parsed.data;
+  const email = d.email.toLowerCase();
+  if (email && !z.string().email().safeParse(email).success) return { ok: false, error: "El correo no es válido" };
+  try {
+    await db.order.update({
+      where: { id: d.id },
+      data: {
+        firstName: d.firstName,
+        lastName: d.lastName || null,
+        email: email || null,
+        phone: d.phone || null,
+        rut: d.rut || null,
+        address1: d.address1 || null,
+        address2: d.address2 || null,
+        commune: d.commune || null,
+        city: d.commune || null,
+        region: d.region || null,
+        shippingMethod: d.shippingMethod,
+      },
+    });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo guardar" };
+  }
+  revalidateOrder(d.id);
+  return { ok: true, message: "Datos del pedido actualizados" };
+}

@@ -12,6 +12,7 @@ import { OrderStatusBadge, ChannelBadge, PaymentStatusBadge } from "@/components
 import { PageHeader } from "@/components/admin/PageHeader";
 import { hrefVolver } from "@/app/admin/_lib/volver";
 import { OrderActions } from "@/components/admin/OrderActions";
+import { OrderItemsEditor, OrderCustomerEditor } from "@/components/admin/OrderEditors";
 import { ShippingForm } from "@/components/admin/ShippingForm";
 
 export const dynamic = "force-dynamic";
@@ -182,6 +183,9 @@ export default async function OrderDetailPage({ params, searchParams }: { params
                 <dd className="tabular-nums">{formatCLP(order.total)}</dd>
               </div>
             </dl>
+            <div className="flex border-t border-ink-100 px-4 py-3 print:hidden">
+              <OrderItemsEditor orderId={order.id} cancelled={order.status === "CANCELLED"} items={order.items.map((it) => ({ id: it.id, name: it.name, price: it.price, quantity: it.quantity }))} />
+            </div>
           </section>
 
           {/* Cliente y entrega */}
@@ -243,6 +247,9 @@ export default async function OrderDetailPage({ params, searchParams }: { params
                   <p className="mt-0.5 whitespace-pre-line">{order.customerNote}</p>
                 </div>
               )}
+              <div className="print:hidden">
+                <OrderCustomerEditor order={{ id: order.id, firstName: order.firstName, lastName: order.lastName, email: order.email, phone: order.phone, rut: order.rut, address1: order.address1, address2: order.address2, commune: order.commune ?? order.city, region: order.region, shippingMethod: order.shippingMethod }} />
+              </div>
             </section>
           </div>
 
