@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, MessageCircle } from "lucide-react";
+import { Search, MessageCircle, FileSpreadsheet } from "lucide-react";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { formatCLP, formatDate } from "@/lib/format";
@@ -66,7 +66,11 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="Clientes" description={`${total.toLocaleString("es-CL")} ${total === 1 ? "persona" : "personas"}${q ? " con esa búsqueda" : " entre clientes con ficha y compradores sin registrarse"}`} />
+      <PageHeader title="Clientes" description={`${total.toLocaleString("es-CL")} ${total === 1 ? "persona" : "personas"}${q ? " con esa búsqueda" : " entre clientes con ficha y compradores sin registrarse"}`}>
+        <a href={`/admin/api/clientes/export?${new URLSearchParams({ q, orden }).toString()}`} className="btn-outline btn-md" title="Descarga la lista de clientes en Excel, con la búsqueda aplicada">
+          <FileSpreadsheet className="size-4" /> Excel
+        </a>
+      </PageHeader>
       <FilterForm action="/admin/clientes" className="card mb-4 grid gap-2 p-3 sm:grid-cols-[1fr_auto]">
         <label className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
